@@ -10,6 +10,20 @@ import { userInfo } from "@/lib/server/db/schema";
 import { db } from "@/lib/server/db";
 
 export const authRouter = createTRPCRouter({
+  getUserInfo: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.session?.user?.id) {
+      throw new Error("Kullanıcı oturumu bulunamadı");
+    }
+
+    const [userInfoData] = await db
+      .select()
+      .from(userInfo)
+      .where(eq(userInfo.userId, ctx.session.user.id))
+      .limit(1);
+
+    return userInfoData || null;
+  }),
+
   saveUserInfo: protectedProcedure
     .input(
       z.object({

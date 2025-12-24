@@ -124,7 +124,7 @@ export function Sidebar({ user }: SidebarProps) {
                   />
                 </svg>
               }
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/user-info")}
             >
               Profil
             </DropdownItem>
@@ -153,8 +153,30 @@ export function Sidebar({ user }: SidebarProps) {
         )}
       </div>
 
-      {/* Main Content Area - will be filled by children */}
-      <div className="flex-1 overflow-y-auto">{/* Content goes here */}</div>
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <nav className="space-y-2">
+          <button
+            onClick={() => router.push("/workspaces")}
+            className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-white/10"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            <span className="font-medium">Çalışma Alanları</span>
+          </button>
+        </nav>
+      </div>
 
       {/* Footer */}
       <div className="border-t border-white/10 bg-black/20 px-6 py-4">
