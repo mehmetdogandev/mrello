@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { api } from "@/lib/server/trpc/react";
+import { useState, useEffect } from "react"
+import { api } from "@/lib/server/trpc/react"
 import {
   Dialog,
   DialogContent,
@@ -9,19 +9,21 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/lib/components/ui/dialog";
-import { Button } from "@/lib/components/ui/button";
-import { Input } from "@/lib/components/ui/input";
+} from "@/lib/components/ui/dialog"
+import { Button } from "@/lib/components/ui/button"
+import { Input } from "@/lib/components/ui/input"
+import { Label } from "@/lib/components/ui/label"
+import { Loader2 } from "lucide-react"
 
 interface UpdateWorkspaceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
   workspace: {
-    id: string;
-    name: string;
-    description: string | null;
-    color: string | null;
-  } | null;
+    id: string
+    name: string
+    description: string | null
+    color: string | null
+  } | null
 }
 
 export function UpdateWorkspaceDialog({
@@ -33,7 +35,7 @@ export function UpdateWorkspaceDialog({
     name: "",
     description: "",
     color: "#3b82f6",
-  });
+  })
 
   useEffect(() => {
     if (workspace) {
@@ -41,35 +43,35 @@ export function UpdateWorkspaceDialog({
         name: workspace.name,
         description: workspace.description || "",
         color: workspace.color || "#3b82f6",
-      });
+      })
     }
-  }, [workspace]);
+  }, [workspace])
 
-  const utils = api.useUtils();
+  const utils = api.useUtils()
   const updateWorkspace = api.workspace.update.useMutation({
     onSuccess: () => {
-      utils.workspace.getAll.invalidate();
-      onOpenChange(false);
+      utils.workspace.getAll.invalidate()
+      onOpenChange(false)
     },
-  });
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!workspace) return;
+    e.preventDefault()
+    if (!workspace) return
 
     updateWorkspace.mutate({
       id: workspace.id,
       name: formData.name,
       description: formData.description || undefined,
       color: formData.color || undefined,
-    });
-  };
+    })
+  }
 
-  if (!workspace) return null;
+  if (!workspace) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Çalışma Alanını Güncelle</DialogTitle>
           <DialogDescription>
@@ -79,12 +81,9 @@ export function UpdateWorkspaceDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label
-              htmlFor="name"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Çalışma Alanı Adı <span className="text-red-500">*</span>
-            </label>
+            <Label htmlFor="name">
+              Çalışma Alanı Adı <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="name"
               type="text"
@@ -94,17 +93,11 @@ export function UpdateWorkspaceDialog({
                 setFormData({ ...formData, name: e.target.value })
               }
               placeholder="Örn: Web Geliştirme"
-              className="transition-all focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="space-y-2">
-            <label
-              htmlFor="description"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Açıklama
-            </label>
+            <Label htmlFor="description">Açıklama</Label>
             <textarea
               id="description"
               value={formData.description}
@@ -113,17 +106,12 @@ export function UpdateWorkspaceDialog({
               }
               placeholder="Çalışma alanı hakkında kısa bir açıklama..."
               rows={3}
-              className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="space-y-2">
-            <label
-              htmlFor="color"
-              className="block text-sm font-semibold text-gray-700"
-            >
-              Renk
-            </label>
+            <Label htmlFor="color">Renk</Label>
             <div className="flex items-center gap-3">
               <Input
                 id="color"
@@ -141,13 +129,13 @@ export function UpdateWorkspaceDialog({
                   setFormData({ ...formData, color: e.target.value })
                 }
                 placeholder="#3b82f6"
-                className="flex-1 transition-all focus:ring-2 focus:ring-blue-500"
+                className="flex-1"
               />
             </div>
           </div>
 
           {updateWorkspace.error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
               {updateWorkspace.error.message}
             </div>
           )}
@@ -160,17 +148,19 @@ export function UpdateWorkspaceDialog({
             >
               İptal
             </Button>
-            <Button
-              type="submit"
-              disabled={updateWorkspace.isPending}
-              className="gradient-primary"
-            >
-              {updateWorkspace.isPending ? "Güncelleniyor..." : "Güncelle"}
+            <Button type="submit" disabled={updateWorkspace.isPending}>
+              {updateWorkspace.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Güncelleniyor...
+                </>
+              ) : (
+                "Güncelle"
+              )}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
-

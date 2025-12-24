@@ -4,8 +4,14 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/server/better-auth/client";
 import { Avatar } from "@/lib/components/ui/avatar";
-import { Dropdown, DropdownItem } from "@/lib/components/ui/dropdown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/lib/components/ui/dropdown";
 import { cn } from "@/lib/utils";
+import { User, LogOut } from "lucide-react";
 
 interface SidebarProps {
   user?: {
@@ -92,8 +98,8 @@ export function Sidebar({ user }: SidebarProps) {
 
         {/* User Dropdown */}
         {user && (
-          <Dropdown
-            trigger={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-white/10">
                 <Avatar
                   src={user.image || undefined}
@@ -105,51 +111,21 @@ export function Sidebar({ user }: SidebarProps) {
                   <p className="text-xs text-gray-300">{user.email}</p>
                 </div>
               </button>
-            }
-            align="right"
-          >
-            <DropdownItem
-              icon={
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              }
-              onClick={() => router.push("/user-info")}
-            >
-              Profil
-            </DropdownItem>
-            <DropdownItem
-              icon={
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              }
-              onClick={handleLogout}
-              className="text-red-600 hover:bg-red-50"
-            >
-              Çıkış Yap
-            </DropdownItem>
-          </Dropdown>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => router.push("/user-info")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Çıkış Yap</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
