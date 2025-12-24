@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 import { createCaller, type AppRouter } from "@/lib/server/trpc";
-import { createTRPCContext } from "@/server/trpc/trpc";
+import { createTRPCContext } from "@/lib/server/trpc/trpc";
 import { createQueryClient } from "./query-client";
 
 /**

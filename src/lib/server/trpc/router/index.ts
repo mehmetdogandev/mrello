@@ -1,8 +1,8 @@
-import { createTRPCRouter } from "@/server/trpc/trpc";
-import { boardRouter } from "@/server/trpc/router/board";
-import { listRouter } from "@/server/trpc/router/list";
-import { cardRouter } from "@/server/trpc/router/card";
-import { workspaceRouter } from "@/server/trpc/router/workspace";
+import { createTRPCRouter } from "@/lib/server/trpc/trpc";
+import { boardRouter } from "@/lib/server/trpc/router/board";
+import { listRouter } from "@/lib/server/trpc/router/list";
+import { cardRouter } from "@/lib/server/trpc/router/card";
+import { workspaceRouter } from "@/lib/server/trpc/router/workspace";
 
 
 
