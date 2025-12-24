@@ -103,8 +103,7 @@ export function WorkspaceDataTable() {
           {allWorkspaces.map((workspace) => (
             <Card
               key={workspace.id}
-              variant="elevated"
-              className="group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
+              className="group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] shadow-lg"
               onClick={() => router.push(`/workspaces/${workspace.id}`)}
             >
               <div className="p-6">

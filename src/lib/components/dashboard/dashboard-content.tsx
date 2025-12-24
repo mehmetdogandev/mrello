@@ -46,7 +46,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card variant="elevated" className="gradient-primary text-white">
+        <Card className="bg-primary text-primary-foreground shadow-lg">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <svg
@@ -73,7 +73,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
           </CardContent>
         </Card>
 
-        <Card variant="elevated">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-700">
               <svg
@@ -98,7 +98,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
           </CardContent>
         </Card>
 
-        <Card variant="elevated">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-700">
               <svg
@@ -148,7 +148,6 @@ export function DashboardContent({ userId }: DashboardContentProps) {
         </Button>
         <Button
           onClick={() => router.push("/workspaces")}
-          variant="outline"
           size="lg"
         >
           <svg
@@ -168,7 +167,6 @@ export function DashboardContent({ userId }: DashboardContentProps) {
         </Button>
         <Button
           onClick={() => router.push("/user-info")}
-          variant="outline"
           size="lg"
         >
           <svg
@@ -196,7 +194,6 @@ export function DashboardContent({ userId }: DashboardContentProps) {
               Son Çalışma Alanları
             </h2>
             <Button
-              variant="ghost"
               onClick={() => router.push("/workspaces")}
               className="text-blue-600 hover:text-blue-700"
             >
@@ -225,7 +222,6 @@ export function DashboardContent({ userId }: DashboardContentProps) {
               return (
                 <Card
                   key={workspace.id}
-                  variant="elevated"
                   className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] group"
                   onClick={() => router.push(`/workspaces/${workspace.id}`)}
                 >
@@ -256,7 +252,6 @@ export function DashboardContent({ userId }: DashboardContentProps) {
                     )}
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <Button
-                        variant="ghost"
                         size="sm"
                         className="w-full group-hover:text-blue-600"
                         onClick={(e) => {
@@ -290,7 +285,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
 
       {/* Empty State */}
       {totalWorkspaces === 0 && (
-        <Card variant="elevated" className="p-12 text-center">
+        <Card className="p-12 text-center shadow-lg">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100">
             <svg
               className="h-10 w-10 text-blue-600"

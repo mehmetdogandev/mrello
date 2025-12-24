@@ -9,16 +9,16 @@ import { id, timestamps, auditMeta } from "../utils";
 export const board = pgTable(
   "board",
   {
-    id,
-    name: text("name").notNull(),
+  id,
+  name: text("name").notNull(),
     description: text("description"),
     coverImage: text("cover_image"), // Board cover image URL
     color: text("color"), // Board rengi (hex color code)
     position: integer("position").notNull().default(0), // Board sıralaması
     isPublic: text("is_public").default("false"), // Public/Private board
     workspaceId: uuid("workspace_id")
-      .notNull()
-      .references(() => workspace.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => workspace.id, { onDelete: "cascade" }),
     ...timestamps,
     ...auditMeta,
   },

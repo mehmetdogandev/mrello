@@ -1,44 +1,42 @@
-import Link from "next/link";
-import { LoginForm } from "@/lib/components/auth/login-form";
+import Link from "next/link"
+import { LoginForm } from "@/lib/components/auth/login-form"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card"
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        {/* Logo and Header */}
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-            <span className="text-3xl font-bold text-white">M</span>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center space-y-2">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
+            <span className="text-3xl font-bold text-primary-foreground">M</span>
           </div>
-          <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900">
-            MIRELLO
-          </h1>
-          <h2 className="mt-2 text-2xl font-semibold text-gray-700">
-            Hesabınıza Giriş Yapın
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h1 className="text-4xl font-bold tracking-tight">MIRELLO</h1>
+          <p className="text-muted-foreground">
             Projelerinizi yönetmek için giriş yapın
           </p>
         </div>
 
-        {/* Form Card */}
-        <div className="glass-effect rounded-2xl px-8 py-10 shadow-xl backdrop-blur-lg">
-          <LoginForm />
-        </div>
-
-        {/* Footer Link */}
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Hesabınız yok mu?{" "}
-            <Link
-              href="/register"
-              className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
-            >
-              Kayıt ol
-            </Link>
-          </p>
-        </div>
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl">Giriş Yap</CardTitle>
+            <CardDescription>
+              Hesabınıza giriş yapmak için bilgilerinizi girin
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LoginForm />
+            <div className="mt-6 text-center text-sm">
+              <span className="text-muted-foreground">Hesabınız yok mu? </span>
+              <Link
+                href="/register"
+                className="font-semibold text-primary hover:underline"
+              >
+                Kayıt ol
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

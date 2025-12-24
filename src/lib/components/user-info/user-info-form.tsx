@@ -82,7 +82,7 @@ export function UserInfoForm({ userId }: UserInfoFormProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <Card variant="elevated">
+        <Card className="shadow-lg">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <Avatar
