@@ -4,9 +4,11 @@ import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from "@/server/trpc/trpc";
-import {  } from "@/server/db/schema/";
+} from "@/lib/server/trpc/trpc";
+import {  } from "@/lib/server/db/schema/";
 
 export const boardRouter = createTRPCRouter({
+
+
   
 });
