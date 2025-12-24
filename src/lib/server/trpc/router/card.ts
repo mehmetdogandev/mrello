@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 import {
   createTRPCRouter,
@@ -80,7 +80,7 @@ export const cardRouter = createTRPCRouter({
       const cards = await db
         .select()
         .from(card)
-        .where(eq(card.listId, input.listId))
+        .where(and(eq(card.listId, input.listId), isNull(card.deletedAt)))
         .orderBy(card.position, desc(card.createdAt));
 
       return cards;
@@ -161,7 +161,7 @@ export const cardRouter = createTRPCRouter({
       const [cardData] = await db
         .select()
         .from(card)
-        .where(eq(card.id, input.id))
+        .where(and(eq(card.id, input.id), isNull(card.deletedAt)))
         .limit(1);
 
       if (!cardData) throw new Error("Card not found");
@@ -261,7 +261,7 @@ export const cardRouter = createTRPCRouter({
       const [cardData] = await db
         .select()
         .from(card)
-        .where(eq(card.id, input.id))
+        .where(and(eq(card.id, input.id), isNull(card.deletedAt)))
         .limit(1);
 
       if (!cardData) throw new Error("Card not found");
@@ -284,7 +284,13 @@ export const cardRouter = createTRPCRouter({
 
       await checkWorkspaceAccess(boardData.workspaceId, userId);
 
-      await db.delete(card).where(eq(card.id, input.id));
+      await db
+        .update(card)
+        .set({
+          deletedAt: new Date(),
+          deletedBy: userId,
+        })
+        .where(eq(card.id, input.id));
 
       return { success: true };
     }),
@@ -304,7 +310,7 @@ export const cardRouter = createTRPCRouter({
       const [cardData] = await db
         .select()
         .from(card)
-        .where(eq(card.id, input.id))
+        .where(and(eq(card.id, input.id), isNull(card.deletedAt)))
         .limit(1);
 
       if (!cardData) throw new Error("Card not found");

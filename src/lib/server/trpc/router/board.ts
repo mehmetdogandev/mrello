@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 import {
   createTRPCRouter,
@@ -44,7 +44,7 @@ export const boardRouter = createTRPCRouter({
       const boards = await db
         .select()
         .from(board)
-        .where(eq(board.workspaceId, input.workspaceId))
+        .where(and(eq(board.workspaceId, input.workspaceId), isNull(board.deletedAt)))
         .orderBy(board.position, desc(board.createdAt));
 
       return boards;
@@ -131,7 +131,7 @@ export const boardRouter = createTRPCRouter({
       const [boardData] = await db
         .select()
         .from(board)
-        .where(eq(board.id, input.id))
+        .where(and(eq(board.id, input.id), isNull(board.deletedAt)))
         .limit(1);
 
       if (!boardData) throw new Error("Board not found");
@@ -239,7 +239,7 @@ export const boardRouter = createTRPCRouter({
       const [boardData] = await db
         .select()
         .from(board)
-        .where(eq(board.id, input.id))
+        .where(and(eq(board.id, input.id), isNull(board.deletedAt)))
         .limit(1);
 
       if (!boardData) throw new Error("Board not found");
@@ -268,7 +268,13 @@ export const boardRouter = createTRPCRouter({
         throw new Error("Unauthorized");
       }
 
-      await db.delete(board).where(eq(board.id, input.id));
+      await db
+        .update(board)
+        .set({
+          deletedAt: new Date(),
+          deletedBy: userId,
+        })
+        .where(eq(board.id, input.id));
 
       return { success: true };
     }),
@@ -288,7 +294,7 @@ export const boardRouter = createTRPCRouter({
       const [boardData] = await db
         .select()
         .from(board)
-        .where(eq(board.id, input.id))
+        .where(and(eq(board.id, input.id), isNull(board.deletedAt)))
         .limit(1);
 
       if (!boardData) throw new Error("Board not found");

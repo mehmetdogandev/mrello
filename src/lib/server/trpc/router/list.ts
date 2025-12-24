@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 import {
   createTRPCRouter,
@@ -52,7 +52,7 @@ export const listRouter = createTRPCRouter({
       const lists = await db
         .select()
         .from(list)
-        .where(eq(list.boardId, input.boardId))
+        .where(and(eq(list.boardId, input.boardId), isNull(list.deletedAt)))
         .orderBy(list.position, desc(list.createdAt));
 
       return lists;
@@ -139,7 +139,7 @@ export const listRouter = createTRPCRouter({
       const [listData] = await db
         .select()
         .from(list)
-        .where(eq(list.id, input.id))
+        .where(and(eq(list.id, input.id), isNull(list.deletedAt)))
         .limit(1);
 
       if (!listData) throw new Error("List not found");
@@ -260,7 +260,7 @@ export const listRouter = createTRPCRouter({
       const [listData] = await db
         .select()
         .from(list)
-        .where(eq(list.id, input.id))
+        .where(and(eq(list.id, input.id), isNull(list.deletedAt)))
         .limit(1);
 
       if (!listData) throw new Error("List not found");
@@ -297,7 +297,13 @@ export const listRouter = createTRPCRouter({
         throw new Error("Unauthorized");
       }
 
-      await db.delete(list).where(eq(list.id, input.id));
+      await db
+        .update(list)
+        .set({
+          deletedAt: new Date(),
+          deletedBy: userId,
+        })
+        .where(eq(list.id, input.id));
 
       return { success: true };
     }),
@@ -317,7 +323,7 @@ export const listRouter = createTRPCRouter({
       const [listData] = await db
         .select()
         .from(list)
-        .where(eq(list.id, input.id))
+        .where(and(eq(list.id, input.id), isNull(list.deletedAt)))
         .limit(1);
 
       if (!listData) throw new Error("List not found");

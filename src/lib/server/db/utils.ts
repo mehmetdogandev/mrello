@@ -23,7 +23,7 @@ export const auditMeta = {
   createdBy: text("created_by").references(() => user.id, {
     onDelete: "set null",
   }),
-  lastUpdatedBy: text("last_updated_by").references(() => user.id, {
+  updatedBy: text("updated_by").references(() => user.id, {
     onDelete: "set null",
   }),
   deletedBy: text("deleted_by").references(() => user.id, {

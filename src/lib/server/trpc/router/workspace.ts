@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 import {
   createTRPCRouter,
@@ -18,7 +18,7 @@ export const workspaceRouter = createTRPCRouter({
     const owned = await db
       .select()
       .from(workspace)
-      .where(eq(workspace.ownerId, userId))
+      .where(and(eq(workspace.ownerId, userId), isNull(workspace.deletedAt)))
       .orderBy(desc(workspace.createdAt));
 
     // Kullanıcının üye olduğu workspace'ler
@@ -74,7 +74,7 @@ export const workspaceRouter = createTRPCRouter({
       const [workspaceData] = await db
         .select()
         .from(workspace)
-        .where(eq(workspace.id, input.id))
+        .where(and(eq(workspace.id, input.id), isNull(workspace.deletedAt)))
         .limit(1);
 
       if (!workspaceData) throw new Error("Workspace not found");
@@ -149,14 +149,20 @@ export const workspaceRouter = createTRPCRouter({
       const [workspaceData] = await db
         .select()
         .from(workspace)
-        .where(eq(workspace.id, input.id))
+        .where(and(eq(workspace.id, input.id), isNull(workspace.deletedAt)))
         .limit(1);
 
       if (!workspaceData || workspaceData.ownerId !== userId) {
         throw new Error("Unauthorized");
       }
 
-      await db.delete(workspace).where(eq(workspace.id, input.id));
+      await db
+        .update(workspace)
+        .set({
+          deletedAt: new Date(),
+          deletedBy: userId,
+        })
+        .where(eq(workspace.id, input.id));
 
       return { success: true };
     }),
