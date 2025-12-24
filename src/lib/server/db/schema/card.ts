@@ -154,6 +154,7 @@ export const cardChecklist = pgTable(
     title: text("title").notNull(),
     position: integer("position").notNull().default(0),
     ...timestamps,
+    ...auditMeta,
   },
   (table) => ({
     cardIdIdx: index("card_checklist_card_id_idx").on(table.cardId),
@@ -175,6 +176,7 @@ export const cardChecklistItem = pgTable(
     isCompleted: boolean("is_completed").default(false).notNull(),
     position: integer("position").notNull().default(0),
     ...timestamps,
+    ...auditMeta,
   },
   (table) => ({
     checklistIdIdx: index("card_checklist_item_checklist_id_idx").on(
