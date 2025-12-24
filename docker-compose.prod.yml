@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    container_name: trello-copy-db-prod
+    container_name: mrello-db-prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -17,11 +17,11 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - trello-copy-network
+      - mrello-network
 
   drizzle-studio:
     image: ghcr.io/drizzle-team/drizzle-orm-cli:latest
-    container_name: trello-copy-drizzle-studio-prod
+    container_name: mrello-drizzle-studio-prod
     depends_on:
       db:
         condition: service_healthy
@@ -42,12 +42,12 @@ services:
       "
     restart: unless-stopped
     networks:
-      - trello-copy-network
+      - mrello-network
 
 volumes:
   db-data-prod:
 
 networks:
-  trello-copy-network:
+  mrello-network:
     driver: bridge
 

@@ -8,7 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/lib/components/ui/ca
 import { Input } from "@/lib/components/ui/input"
 import { Label } from "@/lib/components/ui/label"
 import { Badge } from "@/lib/components/ui/badge"
-import { Loader2, ArrowLeft, Save, Calendar, Users, Tag, MessageSquare, CheckSquare } from "lucide-react"
+import { Avatar } from "@/lib/components/ui/avatar"
+import { LabelSelector } from "./label-selector"
+import { MemberSelector } from "./member-selector"
+import { ChecklistInput } from "./checklist-input"
+import {
+  Loader2,
+  ArrowLeft,
+  Save,
+  Calendar,
+  Users,
+  Tag,
+  MessageSquare,
+  CheckSquare,
+  X,
+  Plus,
+} from "lucide-react"
 
 interface CardDetailProps {
   workspaceId: string
@@ -33,12 +48,78 @@ export function CardDetail({
   })
 
   const { data: card, isLoading } = api.card.getById.useQuery({ id: cardId })
+  const { data: cardLabels = [] } = api.card.getLabels.useQuery(
+    { cardId },
+    { enabled: !!cardId }
+  )
+  const { data: cardMembers = [] } = api.card.getMembers.useQuery(
+    { cardId },
+    { enabled: !!cardId }
+  )
+  const { data: cardChecklists = [] } = api.card.getChecklists.useQuery(
+    { cardId },
+    { enabled: !!cardId }
+  )
+  const { data: cardComments = [] } = api.card.getComments.useQuery(
+    { cardId },
+    { enabled: !!cardId }
+  )
+
+  // Get user details for members
+  const memberUserIds = cardMembers.map((m) => m.userId)
+  const { data: workspaceMembers = [] } = api.workspace.getMembers.useQuery(
+    { workspaceId },
+    { enabled: !!workspaceId && memberUserIds.length > 0 }
+  )
+
   const utils = api.useUtils()
-  
+
   const updateCard = api.card.update.useMutation({
     onSuccess: () => {
       utils.card.getById.invalidate({ id: cardId })
       setIsEditing(false)
+    },
+  })
+
+  const addLabel = api.card.addLabel.useMutation({
+    onSuccess: () => {
+      utils.card.getLabels.invalidate({ cardId })
+    },
+  })
+
+  const removeLabel = api.card.removeLabel.useMutation({
+    onSuccess: () => {
+      utils.card.getLabels.invalidate({ cardId })
+    },
+  })
+
+  const addMember = api.card.addMember.useMutation({
+    onSuccess: () => {
+      utils.card.getMembers.invalidate({ cardId })
+    },
+  })
+
+  const removeMember = api.card.removeMember.useMutation({
+    onSuccess: () => {
+      utils.card.getMembers.invalidate({ cardId })
+    },
+  })
+
+  const addChecklist = api.card.addChecklist.useMutation({
+    onSuccess: () => {
+      utils.card.getChecklists.invalidate({ cardId })
+    },
+  })
+
+  const addChecklistItem = api.card.addChecklistItem.useMutation({
+    onSuccess: () => {
+      utils.card.getChecklists.invalidate({ cardId })
+    },
+  })
+
+  const toggleChecklistItem = api.card.toggleChecklistItem.useMutation({
+    onSuccess: () => {
+      utils.card.getChecklists.invalidate({ cardId })
     },
   })
 
@@ -93,6 +174,17 @@ export function CardDetail({
       color: formData.color || undefined,
     })
   }
+
+  // Map members to user details
+  const membersWithDetails = cardMembers.map((member) => {
+    const user = workspaceMembers.find((u) => u.id === member.userId)
+    return {
+      ...member,
+      name: user?.name || "Bilinmeyen",
+      email: user?.email || "",
+      image: user?.image || null,
+    }
+  })
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -181,8 +273,212 @@ export function CardDetail({
             )}
           </div>
 
+          {/* Labels */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Etiketler
+            </Label>
+            {cardLabels.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {cardLabels.map((label) => (
+                  <Badge
+                    key={label.id}
+                    className="gap-2 px-3 py-1.5 text-xs font-medium"
+                    style={{
+                      backgroundColor: `${label.color}20`,
+                      color: label.color,
+                      borderColor: `${label.color}40`,
+                    }}
+                  >
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: label.color }}
+                    />
+                    {label.name}
+                    {!isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => removeLabel.mutate({ labelId: label.id })}
+                        className="ml-1 hover:opacity-70"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {isEditing && (
+              <LabelSelector
+                selectedLabels={cardLabels.map((l) => ({
+                  id: l.id,
+                  name: l.name,
+                  color: l.color,
+                }))}
+                onLabelsChange={(labels) => {
+                  // Add new labels
+                  labels.forEach((label) => {
+                    if (!label.id) {
+                      addLabel.mutate({
+                        cardId,
+                        name: label.name,
+                        color: label.color,
+                      })
+                    }
+                  })
+                  // Remove deleted labels
+                  cardLabels.forEach((existingLabel) => {
+                    if (!labels.find((l) => l.id === existingLabel.id)) {
+                      removeLabel.mutate({ labelId: existingLabel.id })
+                    }
+                  })
+                }}
+              />
+            )}
+          </div>
+
+          {/* Members */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Üyeler
+            </Label>
+            {membersWithDetails.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {membersWithDetails.map((member) => (
+                  <Badge
+                    key={member.userId}
+                    variant="secondary"
+                    className="gap-2 px-2 py-1"
+                  >
+                    <Avatar
+                      src={member.image || undefined}
+                      name={member.name}
+                      size="xs"
+                    />
+                    <span className="text-xs">{member.name}</span>
+                    {!isEditing && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeMember.mutate({
+                            cardId,
+                            userId: member.userId,
+                          })
+                        }
+                        className="ml-1 hover:opacity-70"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {isEditing && (
+              <MemberSelector
+                workspaceId={workspaceId}
+                selectedMembers={membersWithDetails}
+                onMembersChange={(members) => {
+                  // Add new members
+                  members.forEach((member) => {
+                    if (!cardMembers.find((m) => m.userId === member.id)) {
+                      addMember.mutate({
+                        cardId,
+                        userId: member.id,
+                      })
+                    }
+                  })
+                  // Remove deleted members
+                  cardMembers.forEach((existingMember) => {
+                    if (!members.find((m) => m.id === existingMember.userId)) {
+                      removeMember.mutate({
+                        cardId,
+                        userId: existingMember.userId,
+                      })
+                    }
+                  })
+                }}
+              />
+            )}
+          </div>
+
+          {/* Checklists */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <CheckSquare className="h-4 w-4" />
+              Kontrol Listeleri
+            </Label>
+            {cardChecklists.length > 0 && (
+              <div className="space-y-3 mb-3">
+                {cardChecklists.map((checklist) => (
+                  <div
+                    key={checklist.id}
+                    className="p-3 border rounded-lg bg-muted/50 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {checklist.title}
+                      </span>
+                    </div>
+                    {checklist.items && checklist.items.length > 0 && (
+                      <div className="space-y-1 pl-4">
+                        {checklist.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={item.isCompleted}
+                              onChange={() =>
+                                toggleChecklistItem.mutate({ itemId: item.id })
+                              }
+                              className="h-4 w-4 rounded border-muted-foreground/30"
+                            />
+                            <span
+                              className={`text-sm ${
+                                item.isCompleted
+                                  ? "line-through text-muted-foreground"
+                                  : ""
+                              }`}
+                            >
+                              {item.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {isEditing && (
+              <ChecklistInput
+                checklists={cardChecklists.map((c) => ({
+                  title: c.title,
+                  items: c.items?.map((i) => i.text) || [],
+                }))}
+                onChecklistsChange={(checklists) => {
+                  // This is a simplified version - in a real app you'd need to handle updates/deletes
+                  checklists.forEach((checklist) => {
+                    if (
+                      !cardChecklists.find((c) => c.title === checklist.title)
+                    ) {
+                      addChecklist.mutate({
+                        cardId,
+                        title: checklist.title,
+                      })
+                    }
+                  })
+                }}
+              />
+            )}
+          </div>
+
           {/* Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
             <div>
               <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -248,31 +544,57 @@ export function CardDetail({
           </div>
 
           {/* Status */}
-          <div>
+          <div className="border-t pt-4">
             <Label className="text-sm font-semibold mb-2 block">Durum</Label>
             <Badge variant={card.isCompleted ? "default" : "secondary"}>
               {card.isCompleted ? "Tamamlandı" : "Devam Ediyor"}
             </Badge>
           </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-            <Button variant="outline" className="gap-2">
-              <Users className="h-4 w-4" />
-              Üyeler
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Tag className="h-4 w-4" />
-              Etiketler
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <CheckSquare className="h-4 w-4" />
-              Kontrol Listesi
-            </Button>
+          {/* Comments */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Yorumlar ({cardComments.length})
+            </Label>
+            {cardComments.length > 0 ? (
+              <div className="space-y-3">
+                {cardComments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="p-3 border rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar
+                          src={undefined}
+                          name={comment.userId}
+                          size="sm"
+                        />
+                        <div>
+                          <div className="text-sm font-medium">
+                            {comment.userId}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleDateString(
+                              "tr-TR"
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm">{comment.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                Henüz yorum yok
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-
