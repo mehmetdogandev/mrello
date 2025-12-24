@@ -6,6 +6,8 @@
 
 **Modern, feature-rich project management application inspired by Trello**
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/mehmetdogandev/mrello)
+
 [![Next.js](https://img.shields.io/badge/Next.js-15.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![tRPC](https://img.shields.io/badge/tRPC-11.0-2596BE?style=for-the-badge)](https://trpc.io/)
@@ -153,8 +155,8 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/mehmetdogandev/trello-copy.git
-cd trello-copy
+git clone https://github.com/mehmetdogandev/mrello.git
+cd mrello
 ```
 
 2. **Install dependencies**
@@ -273,7 +275,7 @@ pnpm run db:studio
 ## 📁 Project Structure
 
 ```
-trello-copy/
+mrello/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   ├── (pages)/            # Route groups
@@ -430,7 +432,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by [mehmetdogan.dev](https://github.com/mehmetdogandev)**
 
-[![GitHub stars](https://img.shields.io/github/stars/mehmetdogandev/trello-copy?style=social)](https://github.com/mehmetdogandev/trello-copy)
-[![GitHub forks](https://img.shields.io/github/forks/mehmetdogandev/trello-copy?style=social)](https://github.com/mehmetdogandev/trello-copy)
+[![GitHub stars](https://img.shields.io/github/stars/mehmetdogandev/mrello?style=social)](https://github.com/mehmetdogandev/mrello)
+[![GitHub forks](https://img.shields.io/github/forks/mehmetdogandev/mrello?style=social)](https://github.com/mehmetdogandev/mrello)
 
 </div>
