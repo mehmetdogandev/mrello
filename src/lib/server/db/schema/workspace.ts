@@ -13,6 +13,7 @@ export const workspace = pgTable(
     id,
     name: text("name").notNull(),
     description: text("description"),
+    color: text("color"), // Workspace rengi (hex color code)
     ownerId: text("owner_id")
       .notNull()
       .references(() => user.id, {
