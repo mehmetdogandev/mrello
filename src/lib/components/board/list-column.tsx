@@ -97,6 +97,7 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
         onOpenChange={setCreateCardDialogOpen}
         listId={list.id}
         boardId={boardId}
+        workspaceId={workspaceId}
       />
     </div>
   )

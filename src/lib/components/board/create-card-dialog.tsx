@@ -62,49 +62,58 @@ export function CreateCardDialog({
   const [checklists, setChecklists] = useState<Checklist[]>([])
 
   const utils = api.useUtils()
+  const addLabel = api.card.addLabel.useMutation()
+  const addMember = api.card.addMember.useMutation()
+  const addChecklist = api.card.addChecklist.useMutation()
+  const addChecklistItem = api.card.addChecklistItem.useMutation()
+
   const createCard = api.card.create.useMutation({
     onSuccess: async (newCard) => {
-      // Add labels
-      for (const label of selectedLabels) {
-        await api.card.addLabel.mutate({
-          cardId: newCard.id,
-          name: label.name,
-          color: label.color,
-        })
-      }
+      try {
+        // Add labels
+        for (const label of selectedLabels) {
+          await addLabel.mutateAsync({
+            cardId: newCard.id,
+            name: label.name,
+            color: label.color,
+          })
+        }
 
-      // Add members
-      for (const member of selectedMembers) {
-        await api.card.addMember.mutate({
-          cardId: newCard.id,
-          userId: member.id,
-        })
-      }
+        // Add members
+        for (const member of selectedMembers) {
+          await addMember.mutateAsync({
+            cardId: newCard.id,
+            userId: member.id,
+          })
+        }
 
-      // Add checklists
-      for (const checklist of checklists) {
-        const [newChecklist] = await api.card.addChecklist.mutate({
-          cardId: newCard.id,
-          title: checklist.title,
-        })
+        // Add checklists
+        for (const checklist of checklists) {
+          const newChecklist = await addChecklist.mutateAsync({
+            cardId: newCard.id,
+            title: checklist.title,
+          })
 
-        // Add checklist items
-        for (const item of checklist.items) {
-          if (item.trim()) {
-            await api.card.addChecklistItem.mutate({
-              checklistId: newChecklist.id,
-              text: item,
-            })
+          // Add checklist items
+          for (const item of checklist.items) {
+            if (item.trim()) {
+              await addChecklistItem.mutateAsync({
+                checklistId: newChecklist.id,
+                text: item,
+              })
+            }
           }
         }
-      }
 
-      utils.card.getByList.invalidate({ listId })
-      onOpenChange(false)
-      setFormData({ title: "", description: "", color: "", dueDate: "" })
-      setSelectedLabels([])
-      setSelectedMembers([])
-      setChecklists([])
+        utils.card.getByList.invalidate({ listId })
+        onOpenChange(false)
+        setFormData({ title: "", description: "", color: "", dueDate: "" })
+        setSelectedLabels([])
+        setSelectedMembers([])
+        setChecklists([])
+      } catch (error) {
+        console.error("Error adding card details:", error)
+      }
     },
   })
 

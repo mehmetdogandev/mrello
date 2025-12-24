@@ -34,27 +34,10 @@ export function MemberSelector({
   const [isOpen, setIsOpen] = useState(false)
 
   // Get workspace members
-  const { data: workspace } = api.workspace.getById.useQuery({ id: workspaceId })
-  const { data: workspaceMembers } = api.workspace.getAll.useQuery()
-
-  // Combine owned and member workspaces to get all members
-  const allWorkspaceMembers: Member[] = []
-  
-  if (workspaceMembers) {
-    // Get members from owned workspaces
-    workspaceMembers.owned?.forEach((ws) => {
-      if (ws.id === workspaceId) {
-        // We need to fetch members separately, for now we'll use a different approach
-      }
-    })
-  }
-
-  // For now, we'll use a simple approach - get all users from workspace
-  // In a real app, you'd have a getWorkspaceMembers endpoint
-  const availableMembers: Member[] = [
-    // This would come from an API call
-    // For now, we'll show a placeholder
-  ]
+  const { data: availableMembers = [], isLoading } = api.workspace.getMembers.useQuery(
+    { workspaceId },
+    { enabled: isOpen }
+  )
 
   const handleAddMember = (member: Member) => {
     if (!selectedMembers.find((m) => m.id === member.id)) {
@@ -114,28 +97,38 @@ export function MemberSelector({
         <PopoverContent className="w-64 p-2" align="start">
           <div className="space-y-2">
             <div className="text-sm font-semibold mb-2">Çalışma Alanı Üyeleri</div>
-            {availableMembers.length > 0 ? (
-              <div className="space-y-1">
-                {availableMembers.map((member) => (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => handleAddMember(member)}
-                    className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors"
-                  >
-                    <Avatar
-                      src={member.image || undefined}
-                      name={member.name}
-                      size="sm"
-                    />
-                    <div className="flex-1 text-left">
-                      <div className="text-sm font-medium">{member.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {member.email}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : availableMembers.length > 0 ? (
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {availableMembers
+                  .filter((member) => !selectedMembers.find((m) => m.id === member.id))
+                  .map((member) => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      onClick={() => handleAddMember(member)}
+                      className="w-full flex items-center gap-2 p-2 rounded hover:bg-muted transition-colors"
+                    >
+                      <Avatar
+                        src={member.image || undefined}
+                        name={member.name || member.email}
+                        size="sm"
+                      />
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium">
+                          {member.name || member.email}
+                        </div>
+                        {member.name && (
+                          <div className="text-xs text-muted-foreground">
+                            {member.email}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground text-center py-4">
