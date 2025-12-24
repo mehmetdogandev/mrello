@@ -87,11 +87,11 @@ export function DashboardContent({ userId }: DashboardContentProps) {
       </div>
 
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Button
           onClick={() => router.push("/workspaces")}
           size="lg"
-          className="gap-2"
+          className="gap-2 w-full"
         >
           <Plus className="h-4 w-4" />
           Yeni Çalışma Alanı
@@ -100,7 +100,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
           onClick={() => router.push("/workspaces")}
           variant="outline"
           size="lg"
-          className="gap-2"
+          className="gap-2 w-full"
         >
           <Briefcase className="h-4 w-4" />
           Tüm Çalışma Alanları
@@ -109,7 +109,7 @@ export function DashboardContent({ userId }: DashboardContentProps) {
           onClick={() => router.push("/user-info")}
           variant="outline"
           size="lg"
-          className="gap-2"
+          className="gap-2 w-full"
         >
           <User className="h-4 w-4" />
           Profil Bilgileri

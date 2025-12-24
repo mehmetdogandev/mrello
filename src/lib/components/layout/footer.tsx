@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Calendar, Clock, CalendarDays } from "lucide-react"
 
 export function Footer() {
   const [currentTime, setCurrentTime] = React.useState(new Date())
@@ -62,19 +63,19 @@ export function Footer() {
       <div className="container flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>📅</span>
+            <Calendar className="h-4 w-4" />
             <span className="font-medium">
               {dateInfo.dayNum} {dateInfo.month} {dateInfo.year}
             </span>
           </div>
-          <span>•</span>
+          <span className="text-muted-foreground/50">•</span>
           <div className="flex items-center gap-2">
-            <span>🗓️</span>
+            <CalendarDays className="h-4 w-4" />
             <span className="font-medium">{dateInfo.day}</span>
           </div>
-          <span>•</span>
+          <span className="text-muted-foreground/50">•</span>
           <div className="flex items-center gap-2">
-            <span>🕐</span>
+            <Clock className="h-4 w-4" />
             <span className="font-mono font-semibold text-foreground">
               {dateInfo.time}
             </span>
