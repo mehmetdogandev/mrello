@@ -5,6 +5,9 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "@/lib/server/trpc/trpc";
+
+// UUID validation helper
+const uuidSchema = z.string().uuid();
 import {
   card,
   cardMember,
@@ -53,7 +56,7 @@ async function checkWorkspaceAccess(
 export const cardRouter = createTRPCRouter({
   // Listedeki tüm kartları getir
   getByList: protectedProcedure
-    .input(z.object({ listId: z.string() }))
+    .input(z.object({ listId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -90,7 +93,7 @@ export const cardRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        listId: z.string(),
+        listId: uuidSchema,
         title: z.string().min(1),
         description: z.string().optional(),
         color: z.string().optional(),
@@ -153,7 +156,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart getir
   getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -192,7 +195,7 @@ export const cardRouter = createTRPCRouter({
   update: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
+        id: uuidSchema,
         title: z.string().min(1).optional(),
         description: z.string().optional(),
         color: z.string().optional(),
@@ -252,7 +255,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart sil
   delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: uuidSchema }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -299,7 +302,7 @@ export const cardRouter = createTRPCRouter({
   updatePosition: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
+        id: uuidSchema,
         position: z.number(),
       }),
     )
@@ -333,7 +336,7 @@ export const cardRouter = createTRPCRouter({
   addMember: protectedProcedure
     .input(
       z.object({
-        cardId: z.string(),
+        cardId: uuidSchema,
         userId: z.string(),
         role: z.enum(["owner", "member"]).default("member"),
       }),
@@ -385,7 +388,7 @@ export const cardRouter = createTRPCRouter({
   removeMember: protectedProcedure
     .input(
       z.object({
-        cardId: z.string(),
+        cardId: uuidSchema,
         userId: z.string(),
       }),
     )
@@ -434,7 +437,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart üyelerini getir
   getMembers: protectedProcedure
-    .input(z.object({ cardId: z.string() }))
+    .input(z.object({ cardId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -462,7 +465,7 @@ export const cardRouter = createTRPCRouter({
   addLabel: protectedProcedure
     .input(
       z.object({
-        cardId: z.string(),
+        cardId: uuidSchema,
         name: z.string().min(1),
         color: z.string().min(1),
       }),
@@ -559,7 +562,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart label'larını getir
   getLabels: protectedProcedure
-    .input(z.object({ cardId: z.string() }))
+    .input(z.object({ cardId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -578,7 +581,7 @@ export const cardRouter = createTRPCRouter({
   addComment: protectedProcedure
     .input(
       z.object({
-        cardId: z.string(),
+        cardId: uuidSchema,
         content: z.string().min(1),
       }),
     )
@@ -629,7 +632,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart yorumlarını getir
   getComments: protectedProcedure
-    .input(z.object({ cardId: z.string() }))
+    .input(z.object({ cardId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -709,7 +712,7 @@ export const cardRouter = createTRPCRouter({
   addChecklist: protectedProcedure
     .input(
       z.object({
-        cardId: z.string(),
+        cardId: uuidSchema,
         title: z.string().min(1),
       }),
     )
@@ -900,7 +903,7 @@ export const cardRouter = createTRPCRouter({
 
   // Kart checklist'lerini getir
   getChecklists: protectedProcedure
-    .input(z.object({ cardId: z.string() }))
+    .input(z.object({ cardId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");

@@ -8,10 +8,13 @@ import {
 import { list, board, workspace, workspaceMember } from "@/lib/server/db/schema";
 import { db } from "@/lib/server/db";
 
+// UUID validation helper
+const uuidSchema = z.string().uuid();
+
 export const listRouter = createTRPCRouter({
   // Board'taki tüm listeleri getir
   getByBoard: protectedProcedure
-    .input(z.object({ boardId: z.string() }))
+    .input(z.object({ boardId: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -62,7 +65,7 @@ export const listRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        boardId: z.string(),
+        boardId: uuidSchema,
         name: z.string().min(1),
         color: z.string().optional(),
       }),
@@ -131,7 +134,7 @@ export const listRouter = createTRPCRouter({
 
   // Liste getir
   getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: uuidSchema }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
@@ -251,7 +254,7 @@ export const listRouter = createTRPCRouter({
 
   // Liste sil
   delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: uuidSchema }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
