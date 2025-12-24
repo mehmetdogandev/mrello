@@ -80,10 +80,7 @@ export const verification = pgTable("verification", {
   ),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
-  account: many(account),
-  session: many(session),
-}));
+// Relations are defined in index.ts to avoid circular dependencies
 
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, { fields: [account.userId], references: [user.id] }),
