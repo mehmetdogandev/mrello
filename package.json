@@ -13,6 +13,7 @@
     "dev": "docker-compose -f docker-compose.dev.yml up -d && sleep 3 && next dev --turbo",
     "dev:clean": "docker-compose -f docker-compose.dev.yml down -v",
     "dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "cli": "bash scripts/cli.sh",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",

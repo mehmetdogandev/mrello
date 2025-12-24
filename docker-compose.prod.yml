@@ -19,6 +19,31 @@ services:
     networks:
       - trello-copy-network
 
+  drizzle-studio:
+    image: ghcr.io/drizzle-team/drizzle-orm-cli:latest
+    container_name: trello-copy-drizzle-studio-prod
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DRIZZLE_STUDIO_PORT: ${DRIZZLE_STUDIO_PORT:-4983}
+      DRIZZLE_STUDIO_PASSWORD: ${DRIZZLE_STUDIO_PASSWORD:-}
+    ports:
+      - "${DRIZZLE_STUDIO_PORT:-4983}:${DRIZZLE_STUDIO_PORT:-4983}"
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: >
+      sh -c "
+        drizzle-kit studio
+        --port ${DRIZZLE_STUDIO_PORT:-4983}
+        --host 0.0.0.0
+      "
+    restart: unless-stopped
+    networks:
+      - trello-copy-network
+
 volumes:
   db-data-prod:
 
