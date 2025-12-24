@@ -1,12 +1,16 @@
 import { z } from "zod";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and, desc, isNull, inArray } from "drizzle-orm";
 
 import {
   createTRPCRouter,
   protectedProcedure,
 } from "@/lib/server/trpc/trpc";
 import { workspace, workspaceMember } from "@/lib/server/db/schema";
+import { user } from "@/lib/server/db/schema";
 import { db } from "@/lib/server/db";
+
+// UUID validation helper
+const uuidSchema = z.string().uuid();
 
 export const workspaceRouter = createTRPCRouter({
   // Tüm workspace'leri getir (kullanıcının sahip olduğu veya üye olduğu)
@@ -167,11 +171,79 @@ export const workspaceRouter = createTRPCRouter({
       return { success: true };
     }),
 
+  // Workspace üyelerini getir
+  getMembers: protectedProcedure
+    .input(z.object({ workspaceId: uuidSchema }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session?.user?.id
+      if (!userId) throw new Error("Unauthorized")
+
+      // Workspace erişim kontrolü
+      const [workspaceData] = await db
+        .select()
+        .from(workspace)
+        .where(and(eq(workspace.id, input.workspaceId), isNull(workspace.deletedAt)))
+        .limit(1)
+
+      if (!workspaceData) throw new Error("Workspace not found")
+
+      const isOwner = workspaceData.ownerId === userId
+      const isMember = await db
+        .select()
+        .from(workspaceMember)
+        .where(
+          and(
+            eq(workspaceMember.workspaceId, input.workspaceId),
+            eq(workspaceMember.userId, userId),
+          ),
+        )
+        .limit(1)
+
+      if (!isOwner && isMember.length === 0) {
+        throw new Error("Unauthorized")
+      }
+
+      // Owner'ı da dahil et
+      const members = await db
+        .select({
+          userId: workspaceMember.userId,
+          role: workspaceMember.role,
+        })
+        .from(workspaceMember)
+        .where(eq(workspaceMember.workspaceId, input.workspaceId))
+
+      // Owner'ı ekle
+      const allMemberIds = [
+        workspaceData.ownerId,
+        ...members.map((m) => m.userId),
+      ]
+
+      // Unique user IDs
+      const uniqueMemberIds = Array.from(new Set(allMemberIds))
+
+      if (uniqueMemberIds.length === 0) {
+        return []
+      }
+
+      // User bilgilerini getir
+      const userMembers = await db
+        .select({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        })
+        .from(user)
+        .where(inArray(user.id, uniqueMemberIds))
+
+      return userMembers
+    }),
+
   // Workspace'e üye ekle
   addMember: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string(),
+        workspaceId: uuidSchema,
         userId: z.string(),
         role: z.enum(["owner", "admin", "member"]).default("member"),
       }),
@@ -224,7 +296,7 @@ export const workspaceRouter = createTRPCRouter({
   removeMember: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string(),
+        workspaceId: uuidSchema,
         userId: z.string(),
       }),
     )
