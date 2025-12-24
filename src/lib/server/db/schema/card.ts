@@ -7,6 +7,7 @@ import {
   index,
   timestamp,
   boolean,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { list } from "./list";
@@ -29,7 +30,7 @@ export const card = pgTable(
     dueDate: timestamp("due_date", { withTimezone: true }), // Bitiş tarihi
     isCompleted: boolean("is_completed").default(false).notNull(), // Tamamlandı mı?
     startDate: timestamp("start_date", { withTimezone: true }), // Başlangıç tarihi
-    listId: text("list_id")
+    listId: uuid("list_id")
       .notNull()
       .references(() => list.id, { onDelete: "cascade" }),
     ...timestamps,
@@ -50,7 +51,7 @@ export const card = pgTable(
 export const cardMember = pgTable(
   "card_member",
   {
-    cardId: text("card_id")
+    cardId: uuid("card_id")
       .notNull()
       .references(() => card.id, { onDelete: "cascade" }),
     userId: text("user_id")
@@ -74,7 +75,7 @@ export const cardLabel = pgTable(
   "card_label",
   {
     id,
-    cardId: text("card_id")
+    cardId: uuid("card_id")
       .notNull()
       .references(() => card.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
@@ -94,7 +95,7 @@ export const cardAttachment = pgTable(
   "card_attachment",
   {
     id,
-    cardId: text("card_id")
+    cardId: uuid("card_id")
       .notNull()
       .references(() => card.id, { onDelete: "cascade" }),
     fileName: text("file_name").notNull(),
@@ -123,7 +124,7 @@ export const cardComment = pgTable(
   {
     id,
     content: text("content").notNull(),
-    cardId: text("card_id")
+    cardId: uuid("card_id")
       .notNull()
       .references(() => card.id, { onDelete: "cascade" }),
     userId: text("user_id")
@@ -147,7 +148,7 @@ export const cardChecklist = pgTable(
   "card_checklist",
   {
     id,
-    cardId: text("card_id")
+    cardId: uuid("card_id")
       .notNull()
       .references(() => card.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
@@ -167,7 +168,7 @@ export const cardChecklistItem = pgTable(
   "card_checklist_item",
   {
     id,
-    checklistId: text("checklist_id")
+    checklistId: uuid("checklist_id")
       .notNull()
       .references(() => cardChecklist.id, { onDelete: "cascade" }),
     text: text("text").notNull(),

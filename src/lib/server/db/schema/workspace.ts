@@ -1,4 +1,4 @@
-import { pgTable, text, primaryKey, index } from "drizzle-orm/pg-core";
+import { pgTable, text, primaryKey, index, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./autentication";
 import { timestamps, auditMeta, id } from "../utils";
@@ -35,7 +35,7 @@ export const workspace = pgTable(
 export const workspaceMember = pgTable(
   "workspace_member",
   {
-    workspaceId: text("workspace_id")
+    workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspace.id, { onDelete: "cascade" }),
     userId: text("user_id")
