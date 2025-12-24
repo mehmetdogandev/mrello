@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: trello-copy
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+
+  drizzle:
+    image: ghcr.io/drizzle-team/drizzle-orm-cli:latest
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/trello-copy
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: ["drizzle", "migrate", "up", "--experimental-force"]
