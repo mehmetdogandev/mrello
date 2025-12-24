@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { workspace } from "./Workspace";
+import { workspace } from "./workspace";
 import { id,timestamps,auditMeta } from "../utils";
 
 
