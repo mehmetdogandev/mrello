@@ -24,10 +24,7 @@ export default async function WorkspacesPage() {
       <main className="flex-1 overflow-y-auto bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold tracking-tight">Çalışma Alanları</h1>
-            <p className="text-muted-foreground mt-2">
-              Projelerinizi organize etmek için çalışma alanları oluşturun
-            </p>
+         
           </div>
           <WorkspaceDataTable />
         </div>

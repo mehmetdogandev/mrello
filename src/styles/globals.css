@@ -1,80 +1,242 @@
 @import "tailwindcss";
 
-@theme {
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Tailwind tema değişkenleri - CSS değişkenlerini Tailwind'e bağlar */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Border radius sistem değerleri */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
 
-  /* Light Mode - Beyaz, Açık Yeşilimsi ve Gri Tonlar */
-  --background: 0 0% 100%;
-  --foreground: 142 15% 18%;
-  --card: 0 0% 100%;
-  --card-foreground: 142 15% 18%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 142 15% 18%;
-  --primary: 142 55% 45%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 142 20% 96%;
-  --secondary-foreground: 142 15% 25%;
-  --muted: 142 15% 95%;
-  --muted-foreground: 142 10% 45%;
-  --accent: 142 25% 92%;
-  --accent-foreground: 142 15% 20%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 142 15% 88%;
-  --input: 142 15% 88%;
-  --ring: 142 55% 45%;
+:root {
+  /* Ana border radius değeri - tüm komponentler için */
   --radius: 0.75rem;
-  --chart-1: 142 70% 50%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  
+  /* Light Mode - Modern Mavi & Gri Tonlar */
+  /* Ana arka plan - temiz beyaz ton */
+  --background: oklch(0.99 0.002 264);
+  /* Ana metin rengi - koyu mavi-gri */
+  --foreground: oklch(0.15 0.02 264);
+  
+  /* Card/Kart bileşenleri */
+  --card: oklch(0.985 0.003 264);
+  --card-foreground: oklch(0.15 0.02 264);
+  
+  /* Popover/Açılır menüler */
+  --popover: oklch(0.995 0.002 264);
+  --popover-foreground: oklch(0.15 0.02 264);
+  
+  /* Primary/Ana tema rengi - profesyonel indigo mavi */
+  --primary: oklch(0.5 0.2 264);
+  --primary-foreground: oklch(0.99 0.002 264);
+  
+  /* Secondary/İkincil renk - yumuşak gri */
+  --secondary: oklch(0.96 0.005 264);
+  --secondary-foreground: oklch(0.2 0.02 264);
+  
+  /* Muted/Sessiz tonlar - arka plan vurguları için */
+  --muted: oklch(0.965 0.006 264);
+  --muted-foreground: oklch(0.45 0.015 264);
+  
+  /* Accent/Vurgu rengi - canlı mavi */
+  --accent: oklch(0.94 0.015 264);
+  --accent-foreground: oklch(0.25 0.03 264);
+  
+  /* Destructive/Uyarı-silme rengi - modern kırmızı */
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0.002 264);
+  
+  /* Border/Kenarlıklar - hafif gri ton */
+  --border: oklch(0.9 0.008 264);
+  /* Input/Form elemanları kenarlığı */
+  --input: oklch(0.88 0.01 264);
+  /* Ring/Fokus halkası */
+  --ring: oklch(0.5 0.2 264);
+  
+  /* Chart/Grafik renk paleti - modern ve ayırt edici */
+  --chart-1: oklch(0.6 0.2 264);     /* İndigo Mavi */
+  --chart-2: oklch(0.65 0.2 160);    /* Turkuaz */
+  --chart-3: oklch(0.7 0.2 340);     /* Pembe */
+  --chart-4: oklch(0.68 0.2 100);    /* Yeşil */
+  --chart-5: oklch(0.62 0.2 50);     /* Turuncu */
+  
+  /* Sidebar/Yan menü - açık ton */
+  --sidebar: oklch(0.98 0.003 264);
+  --sidebar-foreground: oklch(0.2 0.02 264);
+  --sidebar-primary: oklch(0.5 0.2 264);
+  --sidebar-primary-foreground: oklch(0.99 0.002 264);
+  --sidebar-accent: oklch(0.94 0.015 264);
+  --sidebar-accent-foreground: oklch(0.25 0.03 264);
+  --sidebar-border: oklch(0.9 0.008 264);
+  --sidebar-ring: oklch(0.5 0.2 264);
 }
 
-@theme dark {
-  /* Dark Mode - Koyu Yeşilimsi ve Gri Tonlar */
-  --background: 142 20% 8%;
-  --foreground: 142 10% 95%;
-  --card: 142 20% 10%;
-  --card-foreground: 142 10% 95%;
-  --popover: 142 20% 10%;
-  --popover-foreground: 142 10% 95%;
-  --primary: 142 60% 55%;
-  --primary-foreground: 142 20% 8%;
-  --secondary: 142 15% 15%;
-  --secondary-foreground: 142 10% 90%;
-  --muted: 142 15% 15%;
-  --muted-foreground: 142 10% 65%;
-  --accent: 142 20% 18%;
-  --accent-foreground: 142 10% 90%;
-  --destructive: 0 62.8% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 142 15% 20%;
-  --input: 142 15% 20%;
-  --ring: 142 60% 55%;
-  --chart-1: 142 70% 60%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+.dark {
+  /* Dark Mode - Modern Koyu Mavi & Gri Tonlar */
+  /* Ana arka plan - derin koyu mavi-gri */
+  --background: oklch(0.12 0.015 264);
+  /* Ana metin rengi - yumuşak beyaz */
+  --foreground: oklch(0.95 0.005 264);
+  
+  /* Card/Kart bileşenleri - hafif daha açık ton */
+  --card: oklch(0.15 0.018 264);
+  --card-foreground: oklch(0.95 0.005 264);
+  
+  /* Popover/Açılır menüler - katmanlı görünüm için */
+  --popover: oklch(0.18 0.02 264);
+  --popover-foreground: oklch(0.95 0.005 264);
+  
+  /* Primary/Ana tema rengi - parlak indigo */
+  --primary: oklch(0.65 0.2 264);
+  --primary-foreground: oklch(0.98 0.003 264);
+  
+  /* Secondary/İkincil renk - orta gri ton */
+  --secondary: oklch(0.22 0.02 264);
+  --secondary-foreground: oklch(0.92 0.008 264);
+  
+  /* Muted/Sessiz tonlar */
+  --muted: oklch(0.2 0.018 264);
+  --muted-foreground: oklch(0.6 0.015 264);
+  
+  /* Accent/Vurgu rengi - koyu modda belirgin */
+  --accent: oklch(0.28 0.03 264);
+  --accent-foreground: oklch(0.95 0.005 264);
+  
+  /* Destructive/Uyarı rengi - parlak kırmızı */
+  --destructive: oklch(0.6 0.24 25);
+  --destructive-foreground: oklch(0.95 0.005 264);
+  
+  /* Border/Kenarlıklar - yarı şeffaf beyaz */
+  --border: oklch(1 0 0 / 12%);
+  /* Input kenarlığı - biraz daha belirgin */
+  --input: oklch(1 0 0 / 18%);
+  /* Ring/Fokus halkası */
+  --ring: oklch(0.65 0.2 264);
+  
+  /* Chart/Grafik renkleri - koyu modda daha parlak */
+  --chart-1: oklch(0.68 0.22 264);   /* Parlak İndigo */
+  --chart-2: oklch(0.7 0.22 160);    /* Parlak Turkuaz */
+  --chart-3: oklch(0.72 0.22 340);   /* Parlak Pembe */
+  --chart-4: oklch(0.7 0.22 100);    /* Parlak Yeşil */
+  --chart-5: oklch(0.68 0.22 50);    /* Parlak Turuncu */
+  
+  /* Sidebar/Yan menü - koyu ton */
+  --sidebar: oklch(0.1 0.012 264);
+  --sidebar-foreground: oklch(0.92 0.008 264);
+  --sidebar-primary: oklch(0.65 0.2 264);
+  --sidebar-primary-foreground: oklch(0.98 0.003 264);
+  --sidebar-accent: oklch(0.22 0.02 264);
+  --sidebar-accent-foreground: oklch(0.95 0.005 264);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.65 0.2 264);
 }
 
-* {
-  border-color: hsl(var(--border));
+@layer base {
+  * {
+    /* Tüm elemanlara border ve outline stilleri uygula */
+    border-color: var(--border);
+  }
+  
+  body {
+    /* Body için tema renklerini uygula */
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tema geçişleri için yumuşak animasyonlar */
+  * {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  /* Tema değiştirme butonunda titreme efektini önle */
+  [data-theme-toggle] {
+    transition: none !important;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
-}
+@layer utilities {
+  /* İki satır sonrası metni kırp ve ... ekle */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-feature-settings: "rlig" 1, "calt" 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Özel scrollbar stilleri - modern ve minimal */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Scrollbar track - şeffaf arka plan */
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Scrollbar thumb - hafif gri ton */
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+
+  /* Scrollbar thumb hover - daha koyu ton */
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* Dark mode scrollbar thumb - hafif beyaz ton */
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Dark mode scrollbar thumb hover - daha belirgin */
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 
 /* Scrollbar Styling */
@@ -84,26 +246,26 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted-foreground) / 0.3);
+  background-color: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground) / 0.5);
+  background-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
 }
 
 /* Selection */
 ::selection {
-  background-color: hsl(var(--primary) / 0.2);
-  color: hsl(var(--foreground));
+  background-color: color-mix(in oklch, var(--primary) 20%, transparent);
+  color: var(--foreground);
 }
 
 /* Focus visible */
 :focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }

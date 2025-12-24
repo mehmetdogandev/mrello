@@ -73,30 +73,51 @@ export function WorkspaceDataTable() {
           {allWorkspaces.map((workspace) => (
             <Card
               key={workspace.id}
-              className="group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]"
+              className="group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] overflow-hidden relative"
               onClick={() => router.push(`/workspaces/${workspace.id}`)}
+              style={{
+                background: workspace.color
+                  ? `linear-gradient(135deg, ${workspace.color}15 0%, ${workspace.color}08 100%)`
+                  : undefined,
+                borderColor: workspace.color
+                  ? `${workspace.color}40`
+                  : undefined,
+              }}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-6 relative z-10">
+                {/* Color accent bar */}
+                {workspace.color && (
+                  <div
+                    className="absolute top-0 left-0 right-0 h-1"
+                    style={{ backgroundColor: workspace.color }}
+                  />
+                )}
+                
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div
-                    className="h-12 w-12 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm"
+                    className="h-14 w-14 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg transition-transform group-hover:scale-110"
                     style={{
-                      backgroundColor: workspace.color || "hsl(var(--primary))",
+                      backgroundColor: workspace.color || "var(--primary)",
+                      backgroundImage: workspace.color
+                        ? `linear-gradient(135deg, ${workspace.color} 0%, ${workspace.color}dd 100%)`
+                        : undefined,
                     }}
                   >
                     {workspace.name.charAt(0).toUpperCase()}
                   </div>
                   <Badge
                     variant={workspace.type === "owned" ? "default" : "secondary"}
-                    className="text-xs"
+                    className="text-xs backdrop-blur-sm bg-background/80"
                   >
                     {workspace.type === "owned" ? "Sahip" : "Üye"}
                   </Badge>
                 </div>
 
                 {/* Content */}
-                <h3 className="text-lg font-semibold mb-2">{workspace.name}</h3>
+                <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                  {workspace.name}
+                </h3>
                 {workspace.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                     {workspace.description}
