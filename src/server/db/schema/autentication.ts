@@ -1,12 +1,11 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
-  index,
   pgTable,
-  pgTableCreator,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { timestamps, auditMeta } from "../utils";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -22,6 +21,19 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at")
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
+});
+
+export const userInfo = pgTable("user_info", {
+  id: text("id").primaryKey(),
+  lastName: text("last_name"),
+  birthDate: timestamp("birth_date"),
+  address: text("address"),
+  phoneNumber: text("phone_number"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  ...timestamps,
+  ...auditMeta,  
 });
 
 export const session = pgTable("session", {
