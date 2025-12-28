@@ -6,7 +6,6 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   DndContext,
   DragEndEvent,
-  DragOverlay,
   DragStartEvent,
   PointerSensor,
   useSensor,
@@ -38,7 +37,6 @@ interface ListColumnProps {
 
 export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
   const [createCardDialogOpen, setCreateCardDialogOpen] = useState(false)
-  const [activeCardId, setActiveCardId] = useState<string | null>(null)
 
   const utils = api.useUtils()
   const { data: cards, isLoading } = api.card.getByList.useQuery({
@@ -46,12 +44,6 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
   })
 
   const updateCardPosition = api.card.updatePosition.useMutation({
-    onSuccess: () => {
-      utils.card.getByList.invalidate({ listId: list.id })
-    },
-  })
-
-  const updateCard = api.card.update.useMutation({
     onSuccess: () => {
       utils.card.getByList.invalidate({ listId: list.id })
     },
@@ -66,6 +58,10 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
     isDragging,
   } = useSortable({
     id: list.id,
+    data: {
+      type: "list",
+      listId: list.id,
+    },
   })
 
   const style = {
@@ -73,6 +69,14 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: `list-drop-${list.id}`,
+    data: {
+      type: "list",
+      listId: list.id,
+    },
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -82,74 +86,35 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
     })
   )
 
-  const handleCardDragStart = (event: DragStartEvent) => {
-    setActiveCardId(event.active.id as string)
-  }
-
   const handleCardDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
-    setActiveCardId(null)
 
-    if (!over || !cards) return
+    if (!over || active.id === over.id || !cards) return
 
-    const activeCard = cards.find((card) => card.id === active.id)
-    if (!activeCard) return
+    // Sadece aynı liste içindeki kart sıralamasını handle et
+    const activeIndex = cards.findIndex((card) => card.id === active.id)
+    const overIndex = cards.findIndex((card) => card.id === over.id)
 
-    // Aynı liste içinde sürükleme
-    if (active.data.current?.listId === over.data.current?.listId) {
-      const activeIndex = cards.findIndex((card) => card.id === active.id)
-      const overIndex = cards.findIndex((card) => card.id === over.id)
+    if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex)
+      return
 
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex)
-        return
+    // Yeni pozisyonları hesapla
+    const newCards = [...cards]
+    const [movedCard] = newCards.splice(activeIndex, 1)
+    newCards.splice(overIndex, 0, movedCard)
 
-      // Yeni pozisyonları hesapla
-      const newCards = [...cards]
-      const [movedCard] = newCards.splice(activeIndex, 1)
-      newCards.splice(overIndex, 0, movedCard)
-
-      // Tüm kartların pozisyonlarını güncelle
-      newCards.forEach((card, index) => {
-        if (card.position !== index) {
-          updateCardPosition.mutate({
-            id: card.id,
-            position: index,
-          })
-        }
-      })
-    } else {
-      // Farklı listeye sürükleme
-      // over.data.current?.listId veya over.id'den liste ID'sini al
-      let targetListId: string | null = null
-
-      if (over.data.current?.type === "list") {
-        targetListId = over.data.current.listId
-      } else if (over.data.current?.listId) {
-        targetListId = over.data.current.listId
-      } else if (typeof over.id === "string" && over.id.startsWith("list-")) {
-        targetListId = over.id.replace("list-", "")
-      }
-
-      if (targetListId && targetListId !== list.id) {
-        // Hedef liste bu liste değilse, kartı taşı
-        updateCard.mutate({
-          id: activeCard.id,
-          listId: targetListId,
-          position: 0, // Yeni listenin başına ekle
+    // Tüm kartların pozisyonlarını güncelle
+    newCards.forEach((card, index) => {
+      if (card.position !== index) {
+        updateCardPosition.mutate({
+          id: card.id,
+          position: index,
         })
       }
-    }
+    })
   }
 
   const cardIds = cards?.map((card) => card.id) || []
-
-  const { setNodeRef: setDroppableRef } = useDroppable({
-    id: `list-${list.id}`,
-    data: {
-      type: "list",
-      listId: list.id,
-    },
-  })
 
   return (
     <div ref={setNodeRef} style={style} className="min-w-[280px] flex-shrink-0">
@@ -196,7 +161,6 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
-            onDragStart={handleCardDragStart}
             onDragEnd={handleCardDragEnd}
           >
             {isLoading ? (
@@ -223,20 +187,6 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
                 Henüz kart yok
               </div>
             )}
-
-            <DragOverlay>
-              {activeCardId ? (
-                <div className="opacity-50">
-                  <Card className="cursor-grabbing shadow-lg">
-                    <CardContent className="p-3">
-                      <h4 className="font-medium text-sm">
-                        {cards?.find((c) => c.id === activeCardId)?.title}
-                      </h4>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : null}
-            </DragOverlay>
           </DndContext>
 
           {/* Add Card Button */}

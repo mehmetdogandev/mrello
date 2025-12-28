@@ -15,6 +15,7 @@ import {
 import {
   SortableContext,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { api } from "@/lib/server/trpc/react"
 import { Button } from "@/lib/components/ui/button"
@@ -31,7 +32,8 @@ interface BoardViewProps {
 export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   const router = useRouter()
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false)
-  const [activeListId, setActiveListId] = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeType, setActiveType] = useState<"list" | "card" | null>(null)
 
   const utils = api.useUtils()
   const { data: board, isLoading: boardLoading } = api.board.getById.useQuery({
@@ -47,6 +49,24 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
     },
   })
 
+  const updateCardPosition = api.card.updatePosition.useMutation({
+    onSuccess: () => {
+      // Tüm listelerin kartlarını yeniden yükle
+      lists?.forEach((list) => {
+        utils.card.getByList.invalidate({ listId: list.id })
+      })
+    },
+  })
+
+  const updateCard = api.card.update.useMutation({
+    onSuccess: () => {
+      // Tüm listelerin kartlarını yeniden yükle
+      lists?.forEach((list) => {
+        utils.card.getByList.invalidate({ listId: list.id })
+      })
+    },
+  })
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -56,36 +76,107 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   )
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveListId(event.active.id as string)
+    setActiveId(event.active.id as string)
+    const activeData = event.active.data.current
+    if (activeData?.type === "card") {
+      setActiveType("card")
+    } else {
+      setActiveType("list")
+    }
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
-    setActiveListId(null)
+    setActiveId(null)
+    setActiveType(null)
 
     if (!over || active.id === over.id) return
 
     if (!lists) return
 
-    const activeIndex = lists.findIndex((list) => list.id === active.id)
-    const overIndex = lists.findIndex((list) => list.id === over.id)
+    const activeData = active.data.current
+    const overData = over.data.current
 
-    if (activeIndex === -1 || overIndex === -1) return
+    // Liste sürükleme
+    if (activeData?.type !== "card") {
+      const activeIndex = lists.findIndex((list) => list.id === active.id)
+      const overIndex = lists.findIndex((list) => list.id === over.id)
 
-    // Yeni pozisyonları hesapla
-    const newLists = [...lists]
-    const [movedList] = newLists.splice(activeIndex, 1)
-    newLists.splice(overIndex, 0, movedList)
+      if (activeIndex === -1 || overIndex === -1) return
 
-    // Tüm listelerin pozisyonlarını güncelle
-    newLists.forEach((list, index) => {
-      if (list.position !== index) {
-        updateListPosition.mutate({
-          id: list.id,
-          position: index,
+      // Yeni pozisyonları hesapla
+      const newLists = [...lists]
+      const [movedList] = newLists.splice(activeIndex, 1)
+      newLists.splice(overIndex, 0, movedList)
+
+      // Tüm listelerin pozisyonlarını güncelle
+      newLists.forEach((list, index) => {
+        if (list.position !== index) {
+          updateListPosition.mutate({
+            id: list.id,
+            position: index,
+          })
+        }
+      })
+      return
+    }
+
+    // Kart sürükleme
+    if (activeData?.type === "card" && activeData?.card) {
+      const activeCard = activeData.card
+      const sourceListId = activeData.listId
+
+      // Hedef listeyi bul
+      let targetListId: string | null = null
+
+      if (overData?.type === "list") {
+        targetListId = overData.listId
+      } else if (overData?.listId) {
+        targetListId = overData.listId
+      } else if (overData?.type === "card" && overData?.listId) {
+        targetListId = overData.listId
+      }
+
+      // Eğer hedef liste bulunamadıysa, over.id'den liste ID'sini çıkar
+      if (!targetListId && typeof over.id === "string") {
+        // over.id bir liste ID'si olabilir veya list-drop- prefix'i ile başlayabilir
+        if (over.id.startsWith("list-drop-")) {
+          targetListId = over.id.replace("list-drop-", "")
+        } else {
+          const list = lists.find((l) => l.id === over.id)
+          if (list) {
+            targetListId = list.id
+          }
+        }
+      }
+
+      if (!targetListId) return
+
+      // Aynı liste içinde sürükleme - bu durumda list-column içinde handle edilecek
+      // Sadece farklı listeye taşıma işlemini burada handle ediyoruz
+      if (targetListId === sourceListId) {
+        return // Aynı liste içindeki sıralama list-column'da handle edilecek
+      }
+
+      // Farklı listeye sürükleme
+      if (targetListId !== sourceListId) {
+        // Hedef listedeki pozisyonu hesapla
+        let newPosition = 0
+        if (overData?.type === "card" && overData?.card) {
+          // Kartın üzerine bırakıldıysa, o kartın pozisyonunu al
+          newPosition = overData.card.position || 0
+        } else {
+          // Liste alanına bırakıldıysa, listenin sonuna ekle
+          newPosition = 999 // Yüksek bir değer, backend'de düzenlenecek
+        }
+
+        updateCard.mutate({
+          id: activeCard.id,
+          listId: targetListId,
+          position: newPosition,
         })
       }
-    })
+    }
   }
 
   if (boardLoading || listsLoading) {
@@ -212,12 +303,18 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
               </div>
             </div>
             <DragOverlay>
-              {activeListId ? (
+              {activeId && activeType === "list" ? (
                 <div className="min-w-[280px] opacity-50">
                   <div className="bg-background border rounded-lg p-4 shadow-lg">
                     <div className="font-semibold text-sm">
-                      {lists.find((l) => l.id === activeListId)?.name}
+                      {lists.find((l) => l.id === activeId)?.name}
                     </div>
+                  </div>
+                </div>
+              ) : activeId && activeType === "card" ? (
+                <div className="opacity-50">
+                  <div className="bg-background border rounded-lg p-3 shadow-lg">
+                    <div className="font-medium text-sm">Kart</div>
                   </div>
                 </div>
               ) : null}
