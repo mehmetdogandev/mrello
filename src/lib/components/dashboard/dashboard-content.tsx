@@ -5,7 +5,7 @@ import { api } from "@/lib/server/trpc/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/lib/components/ui/card"
 import { Button } from "@/lib/components/ui/button"
 import { Badge } from "@/lib/components/ui/badge"
-import { Loader2, Plus, Briefcase, User, ArrowRight, CheckCircle2, Users } from "lucide-react"
+import { Loader2, Plus, Briefcase, User, ArrowRight, CheckCircle2, Users, Hand } from "lucide-react"
 
 interface DashboardContentProps {
   userId: string
@@ -36,7 +36,10 @@ export function DashboardContent({ userId }: DashboardContentProps) {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight">Hoş Geldiniz! 👋</h1>
+        <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
+          Hoş Geldiniz!
+          <Hand className="h-8 w-8 text-primary" />
+        </h1>
         <p className="text-lg text-muted-foreground">
           Projelerinizi yönetmek için hazırsınız
         </p>

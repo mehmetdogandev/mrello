@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/lib/components/ui/dropdown";
 import { cn } from "@/lib/utils";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Calendar, Clock } from "lucide-react";
 
 interface SidebarProps {
   user?: {
@@ -159,19 +159,19 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">📅</span>
+              <Calendar className="h-4 w-4 text-gray-400" />
               <span className="font-medium">
                 {dateInfo.dayNum} {dateInfo.month} {dateInfo.year}
               </span>
             </div>
             <span className="text-gray-500">•</span>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">🗓️</span>
+              <Calendar className="h-4 w-4 text-gray-400" />
               <span className="font-medium">{dateInfo.day}</span>
             </div>
             <span className="text-gray-500">•</span>
             <div className="flex items-center gap-2">
-              <span className="text-gray-400">🕐</span>
+              <Clock className="h-4 w-4 text-gray-400" />
               <span className="font-mono font-semibold text-blue-400">
                 {dateInfo.time}
               </span>

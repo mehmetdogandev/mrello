@@ -2,6 +2,20 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable"
 import { api } from "@/lib/server/trpc/react"
 import { Button } from "@/lib/components/ui/button"
 import { CreateListDialog } from "./create-list-dialog"
@@ -17,13 +31,62 @@ interface BoardViewProps {
 export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   const router = useRouter()
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false)
+  const [activeListId, setActiveListId] = useState<string | null>(null)
 
+  const utils = api.useUtils()
   const { data: board, isLoading: boardLoading } = api.board.getById.useQuery({
     id: boardId,
   })
   const { data: lists, isLoading: listsLoading } = api.list.getByBoard.useQuery({
     boardId,
   })
+
+  const updateListPosition = api.list.updatePosition.useMutation({
+    onSuccess: () => {
+      utils.list.getByBoard.invalidate({ boardId })
+    },
+  })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveListId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveListId(null)
+
+    if (!over || active.id === over.id) return
+
+    if (!lists) return
+
+    const activeIndex = lists.findIndex((list) => list.id === active.id)
+    const overIndex = lists.findIndex((list) => list.id === over.id)
+
+    if (activeIndex === -1 || overIndex === -1) return
+
+    // Yeni pozisyonları hesapla
+    const newLists = [...lists]
+    const [movedList] = newLists.splice(activeIndex, 1)
+    newLists.splice(overIndex, 0, movedList)
+
+    // Tüm listelerin pozisyonlarını güncelle
+    newLists.forEach((list, index) => {
+      if (list.position !== index) {
+        updateListPosition.mutate({
+          id: list.id,
+          position: index,
+        })
+      }
+    })
+  }
 
   if (boardLoading || listsLoading) {
     return (
@@ -52,6 +115,8 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
       </div>
     )
   }
+
+  const listIds = lists?.map((list) => list.id) || []
 
   return (
     <div className="min-h-full bg-muted/30">
@@ -114,27 +179,50 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
       {/* Board Content - Lists */}
       <div className="container mx-auto px-4 py-6">
         {lists && lists.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
-            {lists.map((list) => (
-              <ListColumn
-                key={list.id}
-                list={list}
-                boardId={boardId}
-                workspaceId={workspaceId}
-              />
-            ))}
-            {/* Add List Button */}
-            <div className="min-w-[280px] flex-shrink-0">
-              <Button
-                variant="outline"
-                className="w-full h-full min-h-[200px] border-dashed gap-2"
-                onClick={() => setCreateListDialogOpen(true)}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+              <SortableContext
+                items={listIds}
+                strategy={horizontalListSortingStrategy}
               >
-                <Plus className="h-5 w-5" />
-                Liste Ekle
-              </Button>
+                {lists.map((list) => (
+                  <ListColumn
+                    key={list.id}
+                    list={list}
+                    boardId={boardId}
+                    workspaceId={workspaceId}
+                  />
+                ))}
+              </SortableContext>
+              {/* Add List Button */}
+              <div className="min-w-[280px] flex-shrink-0">
+                <Button
+                  variant="outline"
+                  className="w-full h-full min-h-[200px] border-dashed gap-2"
+                  onClick={() => setCreateListDialogOpen(true)}
+                >
+                  <Plus className="h-5 w-5" />
+                  Liste Ekle
+                </Button>
+              </div>
             </div>
-          </div>
+            <DragOverlay>
+              {activeListId ? (
+                <div className="min-w-[280px] opacity-50">
+                  <div className="bg-background border rounded-lg p-4 shadow-lg">
+                    <div className="font-semibold text-sm">
+                      {lists.find((l) => l.id === activeListId)?.name}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         ) : (
           <div className="text-center py-12">
             <h3 className="text-xl font-bold mb-2">Henüz liste yok</h3>
@@ -162,4 +250,3 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
     </div>
   )
 }
-

@@ -204,13 +204,14 @@ export const cardRouter = createTRPCRouter({
         startDate: z.string().optional(),
         isCompleted: z.boolean().optional(),
         position: z.number().optional(),
+        listId: uuidSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
       if (!userId) throw new Error("Unauthorized");
 
-      const { id, dueDate, startDate, ...updateData } = input;
+      const { id, dueDate, startDate, listId, ...updateData } = input;
 
       // Card, list, board ve workspace erişim kontrolü
       const [cardData] = await db
@@ -221,28 +222,69 @@ export const cardRouter = createTRPCRouter({
 
       if (!cardData) throw new Error("Card not found");
 
-      const [listData] = await db
-        .select()
-        .from(list)
-        .where(eq(list.id, cardData.listId))
-        .limit(1);
+      // Eğer listId değiştiriliyorsa, yeni list'in aynı board'ta olduğunu kontrol et
+      if (listId && listId !== cardData.listId) {
+        const [newListData] = await db
+          .select()
+          .from(list)
+          .where(eq(list.id, listId))
+          .limit(1);
 
-      if (!listData) throw new Error("List not found");
+        if (!newListData) throw new Error("New list not found");
 
-      const [boardData] = await db
-        .select()
-        .from(board)
-        .where(eq(board.id, listData.boardId))
-        .limit(1);
+        const [oldListData] = await db
+          .select()
+          .from(list)
+          .where(eq(list.id, cardData.listId))
+          .limit(1);
 
-      if (!boardData) throw new Error("Board not found");
+        if (!oldListData) throw new Error("Old list not found");
 
-      await checkWorkspaceAccess(boardData.workspaceId, userId);
+        const [oldBoardData] = await db
+          .select()
+          .from(board)
+          .where(eq(board.id, oldListData.boardId))
+          .limit(1);
+
+        const [newBoardData] = await db
+          .select()
+          .from(board)
+          .where(eq(board.id, newListData.boardId))
+          .limit(1);
+
+        if (!oldBoardData || !newBoardData) throw new Error("Board not found");
+
+        // Aynı board'ta olmalılar
+        if (oldBoardData.id !== newBoardData.id) {
+          throw new Error("Cards can only be moved within the same board");
+        }
+
+        await checkWorkspaceAccess(newBoardData.workspaceId, userId);
+      } else {
+        const [listData] = await db
+          .select()
+          .from(list)
+          .where(eq(list.id, cardData.listId))
+          .limit(1);
+
+        if (!listData) throw new Error("List not found");
+
+        const [boardData] = await db
+          .select()
+          .from(board)
+          .where(eq(board.id, listData.boardId))
+          .limit(1);
+
+        if (!boardData) throw new Error("Board not found");
+
+        await checkWorkspaceAccess(boardData.workspaceId, userId);
+      }
 
       const [updated] = await db
         .update(card)
         .set({
           ...updateData,
+          listId: listId || undefined,
           dueDate: dueDate ? new Date(dueDate) : undefined,
           startDate: startDate ? new Date(startDate) : undefined,
           updatedBy: userId,
