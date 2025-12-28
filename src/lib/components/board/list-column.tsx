@@ -3,16 +3,7 @@
 import { useState } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import {
-  DndContext,
-  DragEndEvent,
-  DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  useDroppable,
-} from "@dnd-kit/core"
+import { useDroppable } from "@dnd-kit/core"
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -38,15 +29,8 @@ interface ListColumnProps {
 export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
   const [createCardDialogOpen, setCreateCardDialogOpen] = useState(false)
 
-  const utils = api.useUtils()
   const { data: cards, isLoading } = api.card.getByList.useQuery({
     listId: list.id,
-  })
-
-  const updateCardPosition = api.card.updatePosition.useMutation({
-    onSuccess: () => {
-      utils.card.getByList.invalidate({ listId: list.id })
-    },
   })
 
   const {
@@ -70,49 +54,13 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const { setNodeRef: setDroppableRef } = useDroppable({
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
     id: `list-drop-${list.id}`,
     data: {
       type: "list",
       listId: list.id,
     },
   })
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  )
-
-  const handleCardDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-
-    if (!over || active.id === over.id || !cards) return
-
-    // Sadece aynı liste içindeki kart sıralamasını handle et
-    const activeIndex = cards.findIndex((card) => card.id === active.id)
-    const overIndex = cards.findIndex((card) => card.id === over.id)
-
-    if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex)
-      return
-
-    // Yeni pozisyonları hesapla
-    const newCards = [...cards]
-    const [movedCard] = newCards.splice(activeIndex, 1)
-    newCards.splice(overIndex, 0, movedCard)
-
-    // Tüm kartların pozisyonlarını güncelle
-    newCards.forEach((card, index) => {
-      if (card.position !== index) {
-        updateCardPosition.mutate({
-          id: card.id,
-          position: index,
-        })
-      }
-    })
-  }
 
   const cardIds = cards?.map((card) => card.id) || []
 
@@ -155,39 +103,38 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
         {/* Cards */}
         <CardContent
           ref={setDroppableRef}
-          className="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-2"
+          className={`p-4 flex-1 overflow-y-auto custom-scrollbar space-y-2 ${
+            isOver ? "bg-muted/50" : ""
+          }`}
           style={{ maxHeight: "calc(100vh - 250px)", minHeight: "200px" }}
         >
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragEnd={handleCardDragEnd}
-          >
-            {isLoading ? (
-              <div className="text-center text-sm text-muted-foreground py-4">
-                Yükleniyor...
+          {isLoading ? (
+            <div className="text-center text-sm text-muted-foreground py-4">
+              Yükleniyor...
+            </div>
+          ) : cards && cards.length > 0 ? (
+            <SortableContext
+              items={cardIds}
+              strategy={verticalListSortingStrategy}
+            >
+              {cards.map((card) => (
+                <CardItem
+                  key={card.id}
+                  card={card}
+                  listId={list.id}
+                  boardId={boardId}
+                  workspaceId={workspaceId}
+                />
+              ))}
+            </SortableContext>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground py-4 min-h-[100px] flex items-center justify-center">
+              <div>
+                <p>Henüz kart yok</p>
+                <p className="text-xs mt-1">Kartları buraya sürükleyin</p>
               </div>
-            ) : cards && cards.length > 0 ? (
-              <SortableContext
-                items={cardIds}
-                strategy={verticalListSortingStrategy}
-              >
-                {cards.map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    listId={list.id}
-                    boardId={boardId}
-                    workspaceId={workspaceId}
-                  />
-                ))}
-              </SortableContext>
-            ) : (
-              <div className="text-center text-sm text-muted-foreground py-4">
-                Henüz kart yok
-              </div>
-            )}
-          </DndContext>
+            </div>
+          )}
 
           {/* Add Card Button */}
           <Button

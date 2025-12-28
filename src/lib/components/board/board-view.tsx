@@ -50,20 +50,139 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   })
 
   const updateCardPosition = api.card.updatePosition.useMutation({
-    onSuccess: () => {
-      // Tüm listelerin kartlarını yeniden yükle
+    onMutate: async ({ id, position }) => {
+      // Optimistic update için tüm listeleri kontrol et
       lists?.forEach((list) => {
-        utils.card.getByList.invalidate({ listId: list.id })
+        const cards = utils.card.getByList.getData({ listId: list.id })
+        if (cards?.some((card: any) => card.id === id)) {
+          utils.card.getByList.setData({ listId: list.id }, (old: any) => {
+            if (!old) return old
+            const newCards = [...old]
+            const cardIndex = newCards.findIndex((card: any) => card.id === id)
+            if (cardIndex === -1) return old
+            const [movedCard] = newCards.splice(cardIndex, 1)
+            newCards.splice(position, 0, movedCard)
+            return newCards.map((card: any, index: number) => ({
+              ...card,
+              position: index,
+            }))
+          })
+        }
       })
+    },
+    onError: (err, variables) => {
+      // Hata durumunda sadece ilgili listeyi invalidate et
+      lists?.forEach((list) => {
+        const cards = utils.card.getByList.getData({ listId: list.id })
+        if (cards?.some((card: any) => card.id === variables.id)) {
+          utils.card.getByList.invalidate({ listId: list.id })
+        }
+      })
+    },
+    onSuccess: (updatedCard) => {
+      // Başarılı olduğunda cache'i güncelle, invalidate etme
+      if (updatedCard) {
+        lists?.forEach((list) => {
+          const cards = utils.card.getByList.getData({ listId: list.id })
+          if (cards?.some((card: any) => card.id === updatedCard.id)) {
+            utils.card.getByList.setData({ listId: list.id }, (old: any) => {
+              if (!old) return old
+              return old.map((card: any) =>
+                card.id === updatedCard.id ? updatedCard : card
+              )
+            })
+          }
+        })
+      }
     },
   })
 
   const updateCard = api.card.update.useMutation({
-    onSuccess: () => {
-      // Tüm listelerin kartlarını yeniden yükle
-      lists?.forEach((list) => {
-        utils.card.getByList.invalidate({ listId: list.id })
-      })
+    onMutate: async ({ id, listId, position }) => {
+      // Optimistic update: Tüm listelerin kartlarını güncelle
+      if (listId) {
+        let sourceListId: string | null = null
+        let cardData: any = null
+
+        // Eski listeyi bul ve kartı al
+        lists?.forEach((list) => {
+          const cards = utils.card.getByList.getData({ listId: list.id })
+          const card = cards?.find((c: any) => c.id === id)
+          if (card) {
+            sourceListId = list.id
+            cardData = card
+          }
+        })
+
+        if (!cardData || !sourceListId) return
+
+        // Eski listeden kartı kaldır
+        utils.card.getByList.setData({ listId: sourceListId }, (old: any) => {
+          if (!old) return old
+          return old.filter((card: any) => card.id !== id).map((card: any, index: number) => ({
+            ...card,
+            position: index,
+          }))
+        })
+
+        // Yeni listeye kartı ekle
+        const targetCards = utils.card.getByList.getData({ listId }) || []
+        const newCard = {
+          ...cardData,
+          listId,
+          position: position ?? targetCards.length,
+        }
+        
+        utils.card.getByList.setData({ listId }, (old: any) => {
+          const newCards = old ? [...old, newCard] : [newCard]
+          return newCards.sort((a: any, b: any) => a.position - b.position)
+        })
+      }
+    },
+    onError: (err, variables) => {
+      // Hata durumunda sadece ilgili listeleri invalidate et
+      if (variables.listId) {
+        lists?.forEach((list) => {
+          const cards = utils.card.getByList.getData({ listId: list.id })
+          if (cards?.some((card: any) => card.id === variables.id)) {
+            utils.card.getByList.invalidate({ listId: list.id })
+          }
+        })
+        utils.card.getByList.invalidate({ listId: variables.listId })
+      }
+    },
+    onSuccess: (updatedCard) => {
+      // Başarılı olduğunda cache'i güncelle, invalidate etme
+      if (updatedCard && updatedCard.listId) {
+        // Eski listeden kaldır (eğer farklı bir listeye taşındıysa)
+        lists?.forEach((list) => {
+          if (list.id !== updatedCard.listId) {
+            const cards = utils.card.getByList.getData({ listId: list.id })
+            if (cards?.some((card: any) => card.id === updatedCard.id)) {
+              utils.card.getByList.setData({ listId: list.id }, (old: any) => {
+                if (!old) return old
+                return old.filter((card: any) => card.id !== updatedCard.id)
+              })
+            }
+          }
+        })
+
+        // Yeni listeye ekle/güncelle
+        utils.card.getByList.setData({ listId: updatedCard.listId }, (old: any) => {
+          if (!old) return [updatedCard]
+          const existingIndex = old.findIndex((card: any) => card.id === updatedCard.id)
+          if (existingIndex >= 0) {
+            // Kart zaten listede, güncelle
+            const newCards = [...old]
+            newCards[existingIndex] = updatedCard
+            return newCards.sort((a: any, b: any) => a.position - b.position)
+          } else {
+            // Kart yeni, ekle
+            const newCards = [...old, updatedCard]
+            return newCards.sort((a: any, b: any) => a.position - b.position)
+          }
+        })
+      }
     },
   })
 
@@ -139,7 +258,6 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
 
       // Eğer hedef liste bulunamadıysa, over.id'den liste ID'sini çıkar
       if (!targetListId && typeof over.id === "string") {
-        // over.id bir liste ID'si olabilir veya list-drop- prefix'i ile başlayabilir
         if (over.id.startsWith("list-drop-")) {
           targetListId = over.id.replace("list-drop-", "")
         } else {
@@ -152,22 +270,30 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
 
       if (!targetListId) return
 
-      // Aynı liste içinde sürükleme - bu durumda list-column içinde handle edilecek
-      // Sadece farklı listeye taşıma işlemini burada handle ediyoruz
-      if (targetListId === sourceListId) {
-        return // Aynı liste içindeki sıralama list-column'da handle edilecek
+      // Aynı liste içinde sürükleme
+      if (targetListId === sourceListId && overData?.type === "card") {
+        const sourceCards = utils.card.getByList.getData({ listId: sourceListId }) || []
+        const activeIndex = sourceCards.findIndex((card: any) => card.id === active.id)
+        const overIndex = sourceCards.findIndex((card: any) => card.id === over.id)
+
+        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return
+
+        updateCardPosition.mutate({
+          id: activeCard.id,
+          position: overIndex,
+        })
+        return
       }
 
       // Farklı listeye sürükleme
       if (targetListId !== sourceListId) {
-        // Hedef listedeki pozisyonu hesapla
-        let newPosition = 0
+        const targetCards = utils.card.getByList.getData({ listId: targetListId }) || []
+        let newPosition = targetCards.length
+
         if (overData?.type === "card" && overData?.card) {
           // Kartın üzerine bırakıldıysa, o kartın pozisyonunu al
-          newPosition = overData.card.position || 0
-        } else {
-          // Liste alanına bırakıldıysa, listenin sonuna ekle
-          newPosition = 999 // Yüksek bir değer, backend'de düzenlenecek
+          const overIndex = targetCards.findIndex((card: any) => card.id === over.id)
+          newPosition = overIndex >= 0 ? overIndex : targetCards.length
         }
 
         updateCard.mutate({
@@ -208,6 +334,15 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   }
 
   const listIds = lists?.map((list) => list.id) || []
+  const allCardIds: string[] = []
+  lists?.forEach((list) => {
+    const cards = utils.card.getByList.getData({ listId: list.id })
+    if (cards) {
+      cards.forEach((card: any) => {
+        allCardIds.push(card.id)
+      })
+    }
+  })
 
   return (
     <div className="min-h-full bg-muted/30">
@@ -278,7 +413,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
           >
             <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
               <SortableContext
-                items={listIds}
+                items={[...listIds, ...allCardIds]}
                 strategy={horizontalListSortingStrategy}
               >
                 {lists.map((list) => (
