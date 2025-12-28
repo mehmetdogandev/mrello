@@ -22,6 +22,7 @@ import { api } from "@/lib/server/trpc/react"
 import { Button } from "@/lib/components/ui/button"
 import { CreateListDialog } from "./create-list-dialog"
 import { ListColumn } from "./list-column"
+import { ListColumnPreview } from "./list-column-preview"
 import { Loader2, ArrowLeft, Plus, MoreVertical } from "lucide-react"
 
 interface BoardViewProps {
@@ -219,19 +220,20 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
 
     // Liste sürükleme - diğer listelerin pozisyonunu güncelle
     if (activeData?.type !== "card" && overData?.type !== "card") {
-      if (!lists) return
+      const currentLists = optimisticLists || lists
+      if (!currentLists) return
 
-      const activeIndex = lists.findIndex((list) => list.id === active.id)
-      const overIndex = lists.findIndex((list) => list.id === over.id)
+      const activeIndex = currentLists.findIndex((list) => list.id === active.id)
+      const overIndex = currentLists.findIndex((list) => list.id === over.id)
 
       if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return
 
       // Optimistic update: Listelerin pozisyonunu anında güncelle
-      const newLists = [...lists]
+      const newLists = [...currentLists]
       const [movedList] = newLists.splice(activeIndex, 1)
       if (movedList) {
         newLists.splice(overIndex, 0, movedList)
-        // Optimistic state'i güncelle
+        // Optimistic state'i güncelle - anlık güncelleme
         setOptimisticLists(newLists)
       }
     }
@@ -324,7 +326,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
         })
       }
     }
-  }, [lists, utils])
+  }, [lists, optimisticLists, utils])
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
@@ -341,13 +343,16 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
 
     // Liste sürükleme
     if (activeData?.type !== "card") {
-      const activeIndex = lists.findIndex((list) => list.id === active.id)
-      const overIndex = lists.findIndex((list) => list.id === over.id)
+      const currentLists = optimisticLists || lists
+      if (!currentLists) return
+
+      const activeIndex = currentLists.findIndex((list) => list.id === active.id)
+      const overIndex = currentLists.findIndex((list) => list.id === over.id)
 
       if (activeIndex === -1 || overIndex === -1) return
 
       // Yeni pozisyonları hesapla
-      const newLists = [...lists]
+      const newLists = [...currentLists]
       const [movedList] = newLists.splice(activeIndex, 1)
       if (movedList) {
         newLists.splice(overIndex, 0, movedList)
@@ -563,18 +568,16 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
                 </Button>
               </div>
             </div>
-            <DragOverlay>
+            <DragOverlay dropAnimation={null}>
               {activeId && activeType === "list" ? (
-                <div className="min-w-[280px] opacity-50">
-                  <div className="bg-background border rounded-lg p-4 shadow-lg">
-                    <div className="font-semibold text-sm">
-                      {displayLists?.find((l) => l.id === activeId)?.name}
-                    </div>
-                  </div>
-                </div>
+                <ListColumnPreview
+                  list={displayLists?.find((l) => l.id === activeId)}
+                  boardId={boardId}
+                  workspaceId={workspaceId}
+                />
               ) : activeId && activeType === "card" ? (
-                <div className="opacity-50">
-                  <div className="bg-background border rounded-lg p-3 shadow-lg">
+                <div className="opacity-90 rotate-2 shadow-2xl">
+                  <div className="bg-background border-2 border-primary rounded-lg p-3">
                     <div className="font-medium text-sm">Kart</div>
                   </div>
                 </div>

@@ -50,8 +50,8 @@ export function ListColumn({ list, boardId, workspaceId }: ListColumnProps) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragging ? "none" : transition, // Sürüklenirken transition yok
+    opacity: isDragging ? 0 : 1, // Sürüklenen liste görünmez (DragOverlay gösterilecek)
   }
 
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
