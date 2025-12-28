@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   DndContext,
-  DragEndEvent,
+  type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
-  DragStartEvent,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -34,6 +35,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   const [createListDialogOpen, setCreateListDialogOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeType, setActiveType] = useState<"list" | "card" | null>(null)
+  const [optimisticLists, setOptimisticLists] = useState<typeof lists | null>(null)
 
   const utils = api.useUtils()
   const { data: board, isLoading: boardLoading } = api.board.getById.useQuery({
@@ -42,6 +44,9 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
   const { data: lists, isLoading: listsLoading } = api.list.getByBoard.useQuery({
     boardId,
   })
+
+  // Optimistic lists state - listeler sürüklenirken anlık güncelleme için
+  const displayLists = optimisticLists || lists
 
   const updateListPosition = api.list.updatePosition.useMutation({
     onSuccess: () => {
@@ -194,7 +199,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
     })
   )
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string)
     const activeData = event.active.data.current
     if (activeData?.type === "card") {
@@ -202,12 +207,130 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
     } else {
       setActiveType("list")
     }
-  }
+  }, [])
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) return
+
+    const activeData = active.data.current
+    const overData = over.data.current
+
+    // Liste sürükleme - diğer listelerin pozisyonunu güncelle
+    if (activeData?.type !== "card" && overData?.type !== "card") {
+      if (!lists) return
+
+      const activeIndex = lists.findIndex((list) => list.id === active.id)
+      const overIndex = lists.findIndex((list) => list.id === over.id)
+
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return
+
+      // Optimistic update: Listelerin pozisyonunu anında güncelle
+      const newLists = [...lists]
+      const [movedList] = newLists.splice(activeIndex, 1)
+      if (movedList) {
+        newLists.splice(overIndex, 0, movedList)
+        // Optimistic state'i güncelle
+        setOptimisticLists(newLists)
+      }
+    }
+
+    // Kart sürükleme - diğer kartların pozisyonunu güncelle
+    if (activeData?.type === "card" && activeData?.card) {
+      const sourceListId = activeData.listId
+
+      // Hedef listeyi bul
+      let targetListId: string | null = null
+
+      if (overData?.type === "list") {
+        targetListId = overData.listId
+      } else if (overData?.listId) {
+        targetListId = overData.listId
+      } else if (overData?.type === "card" && overData?.listId) {
+        targetListId = overData.listId
+      }
+
+      if (!targetListId && typeof over.id === "string") {
+        if (over.id.startsWith("list-drop-")) {
+          targetListId = over.id.replace("list-drop-", "")
+        } else {
+          const list = lists?.find((l) => l.id === over.id)
+          if (list) {
+            targetListId = list.id
+          }
+        }
+      }
+
+      if (!targetListId) return
+
+      // Aynı liste içinde sürükleme
+      if (targetListId === sourceListId && overData?.type === "card") {
+        const sourceCards = utils.card.getByList.getData({ listId: sourceListId }) || []
+        const activeIndex = sourceCards.findIndex((card: any) => card.id === active.id)
+        const overIndex = sourceCards.findIndex((card: any) => card.id === over.id)
+
+        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) return
+
+        // Optimistic update: Kartların pozisyonunu anında güncelle
+        utils.card.getByList.setData({ listId: sourceListId }, (old: any) => {
+          if (!old) return old
+          const newCards = [...old]
+          const [movedCard] = newCards.splice(activeIndex, 1)
+          newCards.splice(overIndex, 0, movedCard)
+          return newCards.map((card: any, index: number) => ({
+            ...card,
+            position: index,
+          }))
+        })
+      } else if (targetListId !== sourceListId) {
+        // Farklı listeye sürükleme - sadece görsel olarak güncelle
+        const sourceCards = utils.card.getByList.getData({ listId: sourceListId }) || []
+        const targetCards = utils.card.getByList.getData({ listId: targetListId }) || []
+        const activeCard = sourceCards.find((card: any) => card.id === active.id)
+
+        if (!activeCard) return
+
+        // Eski listeden kaldır (görsel olarak)
+        utils.card.getByList.setData({ listId: sourceListId }, (old: any) => {
+          if (!old) return old
+          return old.filter((card: any) => card.id !== active.id).map((card: any, index: number) => ({
+            ...card,
+            position: index,
+          }))
+        })
+
+        // Yeni listeye ekle (görsel olarak)
+        let newPosition = targetCards.length
+        if (overData?.type === "card" && overData?.card) {
+          const overIndex = targetCards.findIndex((card: any) => card.id === over.id)
+          newPosition = overIndex >= 0 ? overIndex : targetCards.length
+        }
+
+        utils.card.getByList.setData({ listId: targetListId }, (old: any) => {
+          const newCard = {
+            ...activeCard,
+            listId: targetListId,
+            position: newPosition,
+          }
+          const newCards = old ? [...old] : []
+          // Eğer kart zaten listede varsa kaldır
+          const filteredCards = newCards.filter((card: any) => card.id !== active.id)
+          filteredCards.splice(newPosition, 0, newCard)
+          return filteredCards.map((card: any, index: number) => ({
+            ...card,
+            position: index,
+          }))
+        })
+      }
+    }
+  }, [lists, utils])
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
     setActiveType(null)
+    setOptimisticLists(null as typeof lists | null) // Optimistic state'i temizle
 
     if (!over || active.id === over.id) return
 
@@ -226,7 +349,9 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
       // Yeni pozisyonları hesapla
       const newLists = [...lists]
       const [movedList] = newLists.splice(activeIndex, 1)
-      newLists.splice(overIndex, 0, movedList)
+      if (movedList) {
+        newLists.splice(overIndex, 0, movedList)
+      }
 
       // Tüm listelerin pozisyonlarını güncelle
       newLists.forEach((list, index) => {
@@ -303,7 +428,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
         })
       }
     }
-  }
+  }, [lists, utils, updateListPosition, updateCardPosition, updateCard])
 
   if (boardLoading || listsLoading) {
     return (
@@ -333,9 +458,9 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
     )
   }
 
-  const listIds = lists?.map((list) => list.id) || []
+  const listIds = displayLists?.map((list) => list.id) || []
   const allCardIds: string[] = []
-  lists?.forEach((list) => {
+  displayLists?.forEach((list) => {
     const cards = utils.card.getByList.getData({ listId: list.id })
     if (cards) {
       cards.forEach((card: any) => {
@@ -404,11 +529,12 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
 
       {/* Board Content - Lists */}
       <div className="container mx-auto px-4 py-6">
-        {lists && lists.length > 0 ? (
+        {displayLists && displayLists.length > 0 ? (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
@@ -416,7 +542,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
                 items={[...listIds, ...allCardIds]}
                 strategy={horizontalListSortingStrategy}
               >
-                {lists.map((list) => (
+                {displayLists.map((list) => (
                   <ListColumn
                     key={list.id}
                     list={list}
@@ -442,7 +568,7 @@ export function BoardView({ workspaceId, boardId, userId }: BoardViewProps) {
                 <div className="min-w-[280px] opacity-50">
                   <div className="bg-background border rounded-lg p-4 shadow-lg">
                     <div className="font-semibold text-sm">
-                      {lists.find((l) => l.id === activeId)?.name}
+                      {displayLists?.find((l) => l.id === activeId)?.name}
                     </div>
                   </div>
                 </div>
